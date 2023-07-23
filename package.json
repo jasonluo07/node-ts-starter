@@ -4,7 +4,8 @@
   "description": "",
   "main": "app.ts",
   "scripts": {
-    "dev": "nodemon src/app.ts",
+    "start": "NODE_ENV=production ts-node src/app.ts",
+    "dev": "NODE_ENV=development nodemon src/app.ts",
     "lint": "eslint src --fix",
     "format": "prettier -w .",
     "test": "echo \"Error: no test specified\" && exit 1"

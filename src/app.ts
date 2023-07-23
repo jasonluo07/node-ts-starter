@@ -1,7 +1,6 @@
-import dotenv from 'dotenv';
-import express from 'express';
+import './config';
 
-dotenv.config();
+import express from 'express';
 
 const app = express();
 
