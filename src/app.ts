@@ -16,7 +16,7 @@ const access: ConnectionOptions = {
   database: process.env.DB_NAME,
 };
 
-const connection = mysql.createConnection(access);
+const pool = mysql.createPool(access);
 
 interface Product {
   id: number;
@@ -27,16 +27,19 @@ interface Product {
 
 // Get all products
 app.get('/products', async (_req: Request, res: Response) => {
-  const [rows] = await (await connection).query<RowDataPacket[]>('SELECT id, name, price, description FROM products');
+  const connection = await pool.getConnection();
+  const [rows] = await connection.query<RowDataPacket[]>('SELECT id, name, price, description FROM products');
   const products = rows as Product[];
   res.json(products);
 });
 
 // Get a specific product
 app.get('/products/:productId', async (req: Request, res: Response) => {
-  const [rows] = await (
-    await connection
-  ).query<RowDataPacket[]>('SELECT id, name, price, description FROM products WHERE id = ?', [req.params.productId]);
+  const connection = await pool.getConnection();
+  const [rows] = await connection.query<RowDataPacket[]>(
+    'SELECT id, name, price, description FROM products WHERE id = ?',
+    [req.params.productId]
+  );
   const product = rows[0] as Product;
   res.json(product);
 });
@@ -44,18 +47,19 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
 // Create a new product
 app.post('/products', async (req: Request, res: Response) => {
   const product: Omit<Product, 'id'> = req.body;
-  const result = await (
-    await connection
-  ).query('INSERT INTO products (name, price) VALUES (?, ?)', [product.name, product.price]);
+  const connection = await pool.getConnection();
+  const result = await connection.query('INSERT INTO products (name, price) VALUES (?, ?)', [
+    product.name,
+    product.price,
+  ]);
   res.status(201).json({ message: 'Product created', result });
 });
 
 // Update a specific product
 app.put('/products/:productId', async (req: Request, res: Response) => {
   const product: Omit<Product, 'id'> = req.body;
-  const result = await (
-    await connection
-  ).query('UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?', [
+  const connection = await pool.getConnection();
+  const result = await connection.query('UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?', [
     product.name,
     product.price,
     product.description,
@@ -66,7 +70,8 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
 
 // Delete a specific product
 app.delete('/products/:productId', async (req: Request, res: Response) => {
-  const result = await (await connection).query('DELETE FROM products WHERE id = ?', [req.params.productId]);
+  const connection = await pool.getConnection();
+  const result = await connection.query('DELETE FROM products WHERE id = ?', [req.params.productId]);
   res.json({ message: 'Product deleted', result });
 });
 
