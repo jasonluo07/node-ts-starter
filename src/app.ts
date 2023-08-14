@@ -2,7 +2,7 @@ import './config';
 
 import type { Request, Response } from 'express';
 import express from 'express';
-import type { ConnectionOptions, RowDataPacket } from 'mysql2/promise';
+import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
 
 const app = express();
@@ -25,54 +25,143 @@ interface Product {
   description: string;
 }
 
-// Get all products
+interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data?: T;
+}
+
+interface SendResponseParams<T> {
+  res: Response;
+  status: number;
+  message: string;
+  data?: T;
+}
+
+function sendResponse<T>({ res, status, message, data }: SendResponseParams<T>): void {
+  const response: ApiResponse<T> = {
+    status,
+    message,
+    data,
+  };
+  res.status(status).json(response);
+}
+
 app.get('/products', async (_req: Request, res: Response) => {
   const connection = await pool.getConnection();
+
   const [rows] = await connection.query<RowDataPacket[]>('SELECT id, name, price, description FROM products');
+  connection.release();
   const products = rows as Product[];
-  res.json(products);
+
+  sendResponse({
+    res,
+    status: 200,
+    message: 'Products retrieved successfully',
+    data: products,
+  });
 });
 
-// Get a specific product
 app.get('/products/:productId', async (req: Request, res: Response) => {
+  const { productId } = req.params;
+
   const connection = await pool.getConnection();
   const [rows] = await connection.query<RowDataPacket[]>(
     'SELECT id, name, price, description FROM products WHERE id = ?',
-    [req.params.productId]
+    [productId]
   );
+  connection.release();
+
+  if (rows.length === 0) {
+    sendResponse({
+      res,
+      status: 404,
+      message: 'Product not found',
+    });
+    return;
+  }
+
   const product = rows[0] as Product;
-  res.json(product);
+
+  sendResponse({
+    res,
+    status: 200,
+    message: 'Product retrieved successfully',
+    data: product,
+  });
 });
 
-// Create a new product
 app.post('/products', async (req: Request, res: Response) => {
-  const product: Omit<Product, 'id'> = req.body;
+  const { name, price }: Omit<Product, 'id'> = req.body;
+
   const connection = await pool.getConnection();
-  const result = await connection.query('INSERT INTO products (name, price) VALUES (?, ?)', [
-    product.name,
-    product.price,
+  const [result] = await connection.query<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
+    name,
+    price,
   ]);
-  res.status(201).json({ message: 'Product created', result });
+  connection.release();
+
+  if (result.affectedRows === 0) {
+    sendResponse({
+      res,
+      status: 500,
+      message: 'Product not created',
+    });
+  } else {
+    sendResponse({
+      res,
+      status: 201,
+      message: 'Product created',
+    });
+  }
 });
 
-// Update a specific product
 app.put('/products/:productId', async (req: Request, res: Response) => {
-  const product: Omit<Product, 'id'> = req.body;
+  const { productId } = req.params;
+  const { name, price, description }: Omit<Product, 'id'> = req.body;
+
   const connection = await pool.getConnection();
-  const result = await connection.query('UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?', [
-    product.name,
-    product.price,
-    product.description,
-    req.params.productId,
-  ]);
-  res.json({ message: 'Product updated', result });
+  const [result] = await connection.query<ResultSetHeader>(
+    'UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
+    [name, price, description, productId]
+  );
+  connection.release();
+
+  if (result.affectedRows === 0) {
+    sendResponse({
+      res,
+      status: 404,
+      message: 'Product not found',
+    });
+  } else {
+    sendResponse({
+      res,
+      status: 200,
+      message: 'Product updated',
+    });
+  }
 });
 
-// Delete a specific product
 app.delete('/products/:productId', async (req: Request, res: Response) => {
+  const { productId } = req.params;
+
   const connection = await pool.getConnection();
-  const result = await connection.query('DELETE FROM products WHERE id = ?', [req.params.productId]);
-  res.json({ message: 'Product deleted', result });
+  const [result] = await connection.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
+  connection.release();
+
+  if (result.affectedRows === 0) {
+    sendResponse({
+      res,
+      status: 404,
+      message: 'Product not found',
+    });
+  } else {
+    sendResponse({
+      res,
+      status: 200,
+      message: 'Product deleted',
+    });
+  }
 });
 
 app.listen(process.env.PORT, () => {
