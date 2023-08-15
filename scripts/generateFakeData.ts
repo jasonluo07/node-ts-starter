@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-const DATA_DIRECTORY_PATH = path.resolve(__dirname, '..', 'data');
+const DATA_DIRECTORY_PATH = path.resolve(process.cwd(), 'data');
 const PRODUCTS_NUM_RECORDS = 100;
 const USERS_NUM_RECORDS = 100;
-const BASE_PRICE_RANGE = { min: 1000, max: 10000 };
+const BASE_PRICE_RANGE = { min: 100, max: 10000 };
 const PASSWORD = 'password'; // TODO: use proper encryption/hashing
 
 function createDataDir() {
@@ -31,7 +31,7 @@ function generateProducts() {
   for (let i = 1; i <= PRODUCTS_NUM_RECORDS; i++) {
     const basePrice =
       Math.floor(Math.random() * (BASE_PRICE_RANGE.max - BASE_PRICE_RANGE.min + 1)) + BASE_PRICE_RANGE.min;
-    const price = (Math.random() < 0.5 ? basePrice : basePrice + 0.5).toFixed(2);
+    const price = Math.random() < 0.5 ? basePrice : basePrice + 0.5;
     rows.push(`Product ${i},Description for Product ${i},${price}\n`);
   }
 
