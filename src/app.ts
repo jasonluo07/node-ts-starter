@@ -27,6 +27,19 @@ enum HttpCode {
   INTERNAL_SERVER_ERROR = 500,
 }
 
+type ApiResponseStatus = 'success' | 'error';
+
+const statusMapping: Record<HttpCode, ApiResponseStatus> = {
+  // success
+  [HttpCode.OK]: 'success',
+  [HttpCode.CREATED]: 'success',
+  // error
+  [HttpCode.BAD_REQUEST]: 'error',
+  [HttpCode.UNAUTHORIZED]: 'error',
+  [HttpCode.NOT_FOUND]: 'error',
+  [HttpCode.INTERNAL_SERVER_ERROR]: 'error',
+};
+
 interface Product {
   id: number;
   name: string;
@@ -35,7 +48,7 @@ interface Product {
 }
 
 interface ApiResponse<T> {
-  status: 'success' | 'error';
+  status: ApiResponseStatus;
   message: string;
   data?: T;
 }
@@ -43,12 +56,12 @@ interface ApiResponse<T> {
 interface SendResponseParams<T> {
   res: Response;
   statusCode: HttpCode;
-  status: 'success' | 'error';
   message: string;
   data?: T;
 }
 
-function sendResponse<T>({ res, statusCode, status, message, data }: SendResponseParams<T>): void {
+function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<T>): void {
+  const status = statusMapping[statusCode];
   const response: ApiResponse<T> = {
     status,
     message,
@@ -67,7 +80,6 @@ app.get('/products', async (_req: Request, res: Response) => {
   sendResponse({
     res,
     statusCode: HttpCode.OK,
-    status: 'success',
     message: 'Products retrieved successfully',
     data: products,
   });
@@ -87,7 +99,6 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
     sendResponse({
       res,
       statusCode: HttpCode.NOT_FOUND,
-      status: 'error',
       message: 'Product not found',
     });
     return;
@@ -98,7 +109,6 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
   sendResponse({
     res,
     statusCode: HttpCode.OK,
-    status: 'success',
     message: 'Product retrieved successfully',
     data: product,
   });
@@ -118,14 +128,12 @@ app.post('/products', async (req: Request, res: Response) => {
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
-      status: 'error',
       message: 'Product not created',
     });
   } else {
     sendResponse({
       res,
       statusCode: HttpCode.CREATED,
-      status: 'success',
       message: 'Product created',
     });
   }
@@ -146,14 +154,12 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
     sendResponse({
       res,
       statusCode: HttpCode.NOT_FOUND,
-      status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
       statusCode: HttpCode.OK,
-      status: 'success',
       message: 'Product updated',
     });
   }
@@ -170,14 +176,12 @@ app.delete('/products/:productId', async (req: Request, res: Response) => {
     sendResponse({
       res,
       statusCode: HttpCode.NOT_FOUND,
-      status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
       statusCode: HttpCode.OK,
-      status: 'success',
       message: 'Product deleted',
     });
   }
