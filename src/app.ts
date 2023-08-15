@@ -15,6 +15,20 @@ export function catchAsyncError(fn: AsyncFunction) {
   return (req: Request, res: Response, next: NextFunction) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
+class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+class UnauthorizedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 app.use(express.json());
 
 const access: ConnectionOptions = {
@@ -105,12 +119,7 @@ app.get(
     );
 
     if (rows.length === 0) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.NOT_FOUND,
-        message: 'Product not found',
-      });
-      return;
+      throw new NotFoundError('Product not found');
     }
 
     const product = rows[0] as Product;
@@ -162,18 +171,14 @@ app.put(
     );
 
     if (result.affectedRows === 0) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.NOT_FOUND,
-        message: 'Product not found',
-      });
-    } else {
-      sendResponse({
-        res,
-        statusCode: HttpCode.OK,
-        message: 'Product updated',
-      });
+      throw new NotFoundError('Product not found');
     }
+
+    sendResponse({
+      res,
+      statusCode: HttpCode.OK,
+      message: 'Product updated',
+    });
   })
 );
 
@@ -185,18 +190,13 @@ app.delete(
     const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
 
     if (result.affectedRows === 0) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.NOT_FOUND,
-        message: 'Product not found',
-      });
-    } else {
-      sendResponse({
-        res,
-        statusCode: HttpCode.OK,
-        message: 'Product deleted',
-      });
+      throw new NotFoundError('Product not found');
     }
+    sendResponse({
+      res,
+      statusCode: HttpCode.OK,
+      message: 'Product deleted',
+    });
   })
 );
 
@@ -206,7 +206,7 @@ function formatZodError(error: z.ZodError): string {
 
 const signInSchema = z.object({
   email: z.string().email({
-    message: 'Invalid email address',
+    message: 'Invalid email',
   }),
   password: z
     .string()
@@ -234,24 +234,14 @@ app.post(
     const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
 
     if (rows.length === 0) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.UNAUTHORIZED,
-        message: 'Invalid email or password',
-      });
-      return;
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     const storedHashedPassword = rows[0].password;
     const isPasswordValid = await checkPassword(password, storedHashedPassword);
 
     if (!isPasswordValid) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.UNAUTHORIZED,
-        message: 'Invalid email or password',
-      });
-      return;
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     const token = generateToken(email);
@@ -275,7 +265,19 @@ function isDbError(message: string): boolean {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
-  if (err instanceof ZodError) {
+  if (err instanceof NotFoundError) {
+    sendResponse({
+      res,
+      statusCode: HttpCode.NOT_FOUND,
+      message: err.message,
+    });
+  } else if (err instanceof UnauthorizedError) {
+    sendResponse({
+      res,
+      statusCode: HttpCode.UNAUTHORIZED,
+      message: err.message,
+    });
+  } else if (err instanceof ZodError) {
     const errorMessages = formatZodError(err);
     sendResponse({
       res,
