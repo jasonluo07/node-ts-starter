@@ -1,6 +1,6 @@
 import './config';
 
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
@@ -9,6 +9,11 @@ import { z } from 'zod';
 import { checkPassword, generateToken } from './utils';
 
 const app = express();
+
+type AsyncFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export function catchAsyncError(fn: AsyncFunction) {
+  return (req: Request, res: Response, next: NextFunction) => Promise.resolve(fn(req, res, next)).catch(next);
+}
 
 app.use(express.json());
 
@@ -73,111 +78,127 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
   res.status(statusCode).json(response);
 }
 
-app.get('/products', async (_req: Request, res: Response) => {
-  const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
+app.get(
+  '/products',
+  catchAsyncError(async (_req: Request, res: Response) => {
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECTx id, name, price, description FROM products');
 
-  const products = rows as Product[];
+    const products = rows as Product[];
 
-  sendResponse({
-    res,
-    statusCode: HttpCode.OK,
-    message: 'Products retrieved successfully',
-    data: products,
-  });
-});
-
-app.get('/products/:productId', async (req: Request, res: Response) => {
-  const { productId } = req.params;
-
-  const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products WHERE id = ?', [
-    productId,
-  ]);
-
-  if (rows.length === 0) {
-    sendResponse({
-      res,
-      statusCode: HttpCode.NOT_FOUND,
-      message: 'Product not found',
-    });
-    return;
-  }
-
-  const product = rows[0] as Product;
-
-  sendResponse({
-    res,
-    statusCode: HttpCode.OK,
-    message: 'Product retrieved successfully',
-    data: product,
-  });
-});
-
-app.post('/products', async (req: Request, res: Response) => {
-  const { name, price }: Omit<Product, 'id'> = req.body;
-
-  const [result] = await pool.execute<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
-    name,
-    price,
-  ]);
-
-  if (result.affectedRows === 0) {
-    sendResponse({
-      res,
-      statusCode: HttpCode.INTERNAL_SERVER_ERROR,
-      message: 'Product not created',
-    });
-  } else {
-    sendResponse({
-      res,
-      statusCode: HttpCode.CREATED,
-      message: 'Product created',
-    });
-  }
-});
-
-app.put('/products/:productId', async (req: Request, res: Response) => {
-  const { productId } = req.params;
-  const { name, price, description }: Omit<Product, 'id'> = req.body;
-
-  const [result] = await pool.execute<ResultSetHeader>(
-    'UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
-    [name, price, description, productId]
-  );
-
-  if (result.affectedRows === 0) {
-    sendResponse({
-      res,
-      statusCode: HttpCode.NOT_FOUND,
-      message: 'Product not found',
-    });
-  } else {
     sendResponse({
       res,
       statusCode: HttpCode.OK,
-      message: 'Product updated',
+      message: 'Products retrieved successfully',
+      data: products,
     });
-  }
-});
+  })
+);
 
-app.delete('/products/:productId', async (req: Request, res: Response) => {
-  const { productId } = req.params;
+app.get(
+  '/products/:productId',
+  catchAsyncError(async (req: Request, res: Response) => {
+    const { productId } = req.params;
 
-  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, name, price, description FROM products WHERE id = ?',
+      [productId]
+    );
 
-  if (result.affectedRows === 0) {
-    sendResponse({
-      res,
-      statusCode: HttpCode.NOT_FOUND,
-      message: 'Product not found',
-    });
-  } else {
+    if (rows.length === 0) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.NOT_FOUND,
+        message: 'Product not found',
+      });
+      return;
+    }
+
+    const product = rows[0] as Product;
+
     sendResponse({
       res,
       statusCode: HttpCode.OK,
-      message: 'Product deleted',
+      message: 'Product retrieved successfully',
+      data: product,
     });
-  }
-});
+  })
+);
+
+app.post(
+  '/products',
+  catchAsyncError(async (req: Request, res: Response) => {
+    const { name, price }: Omit<Product, 'id'> = req.body;
+
+    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
+      name,
+      price,
+    ]);
+
+    if (result.affectedRows === 0) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.INTERNAL_SERVER_ERROR,
+        message: 'Product not created',
+      });
+    } else {
+      sendResponse({
+        res,
+        statusCode: HttpCode.CREATED,
+        message: 'Product created',
+      });
+    }
+  })
+);
+
+app.put(
+  '/products/:productId',
+  catchAsyncError(async (req: Request, res: Response) => {
+    const { productId } = req.params;
+    const { name, price, description }: Omit<Product, 'id'> = req.body;
+
+    const [result] = await pool.execute<ResultSetHeader>(
+      'UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
+      [name, price, description, productId]
+    );
+
+    if (result.affectedRows === 0) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.NOT_FOUND,
+        message: 'Product not found',
+      });
+    } else {
+      sendResponse({
+        res,
+        statusCode: HttpCode.OK,
+        message: 'Product updated',
+      });
+    }
+  })
+);
+
+app.delete(
+  '/products/:productId',
+  catchAsyncError(async (req: Request, res: Response) => {
+    const { productId } = req.params;
+
+    const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
+
+    if (result.affectedRows === 0) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.NOT_FOUND,
+        message: 'Product not found',
+      });
+    } else {
+      sendResponse({
+        res,
+        statusCode: HttpCode.OK,
+        message: 'Product deleted',
+      });
+    }
+  })
+);
 
 function formatZodError(error: z.ZodError): string {
   return error.issues.map((issue) => issue.message).join('\n');
@@ -204,51 +225,74 @@ const signInSchema = z.object({
     ),
 });
 
-app.post('/auth/signin', async (req: Request, res: Response) => {
-  const validationResult = signInSchema.safeParse(req.body);
+app.post(
+  '/auth/signin',
+  catchAsyncError(async (req: Request, res: Response) => {
+    const validationResult = signInSchema.safeParse(req.body);
 
-  if (!validationResult.success) {
-    const errorMessage = formatZodError(validationResult.error);
+    if (!validationResult.success) {
+      const errorMessage = formatZodError(validationResult.error);
+
+      sendResponse({
+        res,
+        statusCode: HttpCode.BAD_REQUEST,
+        message: errorMessage,
+      });
+      return;
+    }
+
+    const { email, password } = validationResult.data;
+
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
+
+    if (rows.length === 0) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.UNAUTHORIZED,
+        message: 'Invalid email or password',
+      });
+      return;
+    }
+
+    const storedHashedPassword = rows[0].password;
+    const isPasswordValid = await checkPassword(password, storedHashedPassword);
+
+    if (!isPasswordValid) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.UNAUTHORIZED,
+        message: 'Invalid email or password',
+      });
+      return;
+    }
+
+    const token = generateToken(email);
     sendResponse({
       res,
-      statusCode: HttpCode.BAD_REQUEST,
-      message: errorMessage,
+      statusCode: HttpCode.OK,
+      message: 'Logged in successfully',
+      data: { token },
     });
-    return;
-  }
+  })
+);
 
-  const { email, password } = validationResult.data;
-
-  const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
-
-  if (rows.length === 0) {
+// Error handling middleware
+// NOTE: _next is required for express to recognize this as an error handling middleware
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof Error) {
     sendResponse({
       res,
-      statusCode: HttpCode.UNAUTHORIZED,
-      message: 'Invalid email or password',
+      statusCode: HttpCode.INTERNAL_SERVER_ERROR,
+      message: err.message,
     });
-    return;
-  }
-
-  const storedHashedPassword = rows[0].password;
-  const isPasswordValid = await checkPassword(password, storedHashedPassword);
-
-  if (!isPasswordValid) {
+  } else {
     sendResponse({
       res,
-      statusCode: HttpCode.UNAUTHORIZED,
-      message: 'Invalid email or password',
+      statusCode: HttpCode.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error',
     });
-    return;
   }
-
-  const token = generateToken(email);
-  sendResponse({
-    res,
-    statusCode: HttpCode.OK,
-    message: 'Logged in successfully',
-    data: { token },
-  });
 });
 
 app.listen(process.env.PORT, () => {
