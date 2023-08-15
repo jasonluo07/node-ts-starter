@@ -73,9 +73,7 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 }
 
 app.get('/products', async (_req: Request, res: Response) => {
-  const connection = await pool.getConnection();
-  const [rows] = await connection.query<RowDataPacket[]>('SELECT id, name, price, description FROM products');
-  connection.release();
+  const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
 
   const products = rows as Product[];
 
@@ -90,12 +88,9 @@ app.get('/products', async (_req: Request, res: Response) => {
 app.get('/products/:productId', async (req: Request, res: Response) => {
   const { productId } = req.params;
 
-  const connection = await pool.getConnection();
-  const [rows] = await connection.query<RowDataPacket[]>(
-    'SELECT id, name, price, description FROM products WHERE id = ?',
-    [productId]
-  );
-  connection.release();
+  const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products WHERE id = ?', [
+    productId,
+  ]);
 
   if (rows.length === 0) {
     sendResponse({
@@ -119,12 +114,10 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
 app.post('/products', async (req: Request, res: Response) => {
   const { name, price }: Omit<Product, 'id'> = req.body;
 
-  const connection = await pool.getConnection();
-  const [result] = await connection.query<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
+  const [result] = await pool.execute<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
     name,
     price,
   ]);
-  connection.release();
 
   if (result.affectedRows === 0) {
     sendResponse({
@@ -145,12 +138,10 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
   const { productId } = req.params;
   const { name, price, description }: Omit<Product, 'id'> = req.body;
 
-  const connection = await pool.getConnection();
-  const [result] = await connection.query<ResultSetHeader>(
+  const [result] = await pool.execute<ResultSetHeader>(
     'UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
     [name, price, description, productId]
   );
-  connection.release();
 
   if (result.affectedRows === 0) {
     sendResponse({
@@ -170,9 +161,7 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
 app.delete('/products/:productId', async (req: Request, res: Response) => {
   const { productId } = req.params;
 
-  const connection = await pool.getConnection();
-  const [result] = await connection.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
-  connection.release();
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
 
   if (result.affectedRows === 0) {
     sendResponse({
@@ -192,9 +181,7 @@ app.delete('/products/:productId', async (req: Request, res: Response) => {
 app.post('/auth/signin', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const connection = await pool.getConnection();
-  const [rows] = await connection.query<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
-  connection.release();
+  const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
 
   if (rows.length === 0) {
     sendResponse({
