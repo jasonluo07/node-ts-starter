@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 
 import { checkPassword, generateToken } from './utils';
 
@@ -228,20 +228,8 @@ const signInSchema = z.object({
 app.post(
   '/auth/signin',
   catchAsyncError(async (req: Request, res: Response) => {
-    const validationResult = signInSchema.safeParse(req.body);
-
-    if (!validationResult.success) {
-      const errorMessages = formatZodError(validationResult.error);
-
-      sendResponse({
-        res,
-        statusCode: HttpCode.BAD_REQUEST,
-        message: errorMessages,
-      });
-      return;
-    }
-
-    const { email, password } = validationResult.data;
+    const validationResult = signInSchema.parse(req.body);
+    const { email, password } = validationResult;
 
     const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
 
@@ -286,7 +274,15 @@ function isDbError(message: string): boolean {
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  if (err instanceof Error) {
+  // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
+  if (err instanceof ZodError) {
+    const errorMessages = formatZodError(err);
+    sendResponse({
+      res,
+      statusCode: HttpCode.BAD_REQUEST,
+      message: errorMessages,
+    });
+  } else if (err instanceof Error) {
     if (isDbError(err.message)) {
       sendResponse({
         res,
