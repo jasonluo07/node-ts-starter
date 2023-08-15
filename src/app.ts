@@ -94,7 +94,7 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 
 app.get(
   '/products',
-  catchAsyncError(async (_req: Request, res: Response) => {
+  catchAsyncError(async (_req, res) => {
     const [rows] = await pool.execute<RowDataPacket[]>('SELECTx id, name, price, description FROM products');
 
     const products = rows as Product[];
@@ -110,7 +110,7 @@ app.get(
 
 app.get(
   '/products/:productId',
-  catchAsyncError(async (req: Request, res: Response) => {
+  catchAsyncError(async (req, res) => {
     const { productId } = req.params;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
@@ -135,7 +135,7 @@ app.get(
 
 app.post(
   '/products',
-  catchAsyncError(async (req: Request, res: Response) => {
+  catchAsyncError(async (req, res) => {
     const { name, price }: Omit<Product, 'id'> = req.body;
 
     const [result] = await pool.execute<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
@@ -161,7 +161,7 @@ app.post(
 
 app.put(
   '/products/:productId',
-  catchAsyncError(async (req: Request, res: Response) => {
+  catchAsyncError(async (req, res) => {
     const { productId } = req.params;
     const { name, price, description }: Omit<Product, 'id'> = req.body;
 
@@ -184,7 +184,7 @@ app.put(
 
 app.delete(
   '/products/:productId',
-  catchAsyncError(async (req: Request, res: Response) => {
+  catchAsyncError(async (req, res) => {
     const { productId } = req.params;
 
     const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
@@ -227,7 +227,7 @@ const signInSchema = z.object({
 
 app.post(
   '/auth/signin',
-  catchAsyncError(async (req: Request, res: Response) => {
+  catchAsyncError(async (req, res) => {
     const validationResult = signInSchema.parse(req.body);
     const { email, password } = validationResult;
 
