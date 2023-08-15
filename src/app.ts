@@ -18,6 +18,15 @@ const access: ConnectionOptions = {
 
 const pool = mysql.createPool(access);
 
+enum HttpCode {
+  OK = 200,
+  CREATED = 201,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  NOT_FOUND = 404,
+  INTERNAL_SERVER_ERROR = 500,
+}
+
 interface Product {
   id: number;
   name: string;
@@ -33,7 +42,7 @@ interface ApiResponse<T> {
 
 interface SendResponseParams<T> {
   res: Response;
-  statusCode: number;
+  statusCode: HttpCode;
   status: 'success' | 'error';
   message: string;
   data?: T;
@@ -57,7 +66,7 @@ app.get('/products', async (_req: Request, res: Response) => {
 
   sendResponse({
     res,
-    statusCode: 200,
+    statusCode: HttpCode.OK,
     status: 'success',
     message: 'Products retrieved successfully',
     data: products,
@@ -77,7 +86,7 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
   if (rows.length === 0) {
     sendResponse({
       res,
-      statusCode: 404,
+      statusCode: HttpCode.NOT_FOUND,
       status: 'error',
       message: 'Product not found',
     });
@@ -88,7 +97,7 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
 
   sendResponse({
     res,
-    statusCode: 200,
+    statusCode: HttpCode.OK,
     status: 'success',
     message: 'Product retrieved successfully',
     data: product,
@@ -108,14 +117,14 @@ app.post('/products', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      statusCode: 500,
+      statusCode: HttpCode.INTERNAL_SERVER_ERROR,
       status: 'error',
       message: 'Product not created',
     });
   } else {
     sendResponse({
       res,
-      statusCode: 201,
+      statusCode: HttpCode.CREATED,
       status: 'success',
       message: 'Product created',
     });
@@ -136,14 +145,14 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      statusCode: 404,
+      statusCode: HttpCode.NOT_FOUND,
       status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
-      statusCode: 200,
+      statusCode: HttpCode.OK,
       status: 'success',
       message: 'Product updated',
     });
@@ -160,14 +169,14 @@ app.delete('/products/:productId', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      statusCode: 404,
+      statusCode: HttpCode.NOT_FOUND,
       status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
-      statusCode: 200,
+      statusCode: HttpCode.OK,
       status: 'success',
       message: 'Product deleted',
     });
