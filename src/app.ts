@@ -26,37 +26,39 @@ interface Product {
 }
 
 interface ApiResponse<T> {
-  status: number;
+  status: 'success' | 'error';
   message: string;
   data?: T;
 }
 
 interface SendResponseParams<T> {
   res: Response;
-  status: number;
+  statusCode: number;
+  status: 'success' | 'error';
   message: string;
   data?: T;
 }
 
-function sendResponse<T>({ res, status, message, data }: SendResponseParams<T>): void {
+function sendResponse<T>({ res, statusCode, status, message, data }: SendResponseParams<T>): void {
   const response: ApiResponse<T> = {
     status,
     message,
     data,
   };
-  res.status(status).json(response);
+  res.status(statusCode).json(response);
 }
 
 app.get('/products', async (_req: Request, res: Response) => {
   const connection = await pool.getConnection();
-
   const [rows] = await connection.query<RowDataPacket[]>('SELECT id, name, price, description FROM products');
   connection.release();
+
   const products = rows as Product[];
 
   sendResponse({
     res,
-    status: 200,
+    statusCode: 200,
+    status: 'success',
     message: 'Products retrieved successfully',
     data: products,
   });
@@ -75,7 +77,8 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
   if (rows.length === 0) {
     sendResponse({
       res,
-      status: 404,
+      statusCode: 404,
+      status: 'error',
       message: 'Product not found',
     });
     return;
@@ -85,7 +88,8 @@ app.get('/products/:productId', async (req: Request, res: Response) => {
 
   sendResponse({
     res,
-    status: 200,
+    statusCode: 200,
+    status: 'success',
     message: 'Product retrieved successfully',
     data: product,
   });
@@ -104,13 +108,15 @@ app.post('/products', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      status: 500,
+      statusCode: 500,
+      status: 'error',
       message: 'Product not created',
     });
   } else {
     sendResponse({
       res,
-      status: 201,
+      statusCode: 201,
+      status: 'success',
       message: 'Product created',
     });
   }
@@ -130,13 +136,15 @@ app.put('/products/:productId', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      status: 404,
+      statusCode: 404,
+      status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
-      status: 200,
+      statusCode: 200,
+      status: 'success',
       message: 'Product updated',
     });
   }
@@ -152,13 +160,15 @@ app.delete('/products/:productId', async (req: Request, res: Response) => {
   if (result.affectedRows === 0) {
     sendResponse({
       res,
-      status: 404,
+      statusCode: 404,
+      status: 'error',
       message: 'Product not found',
     });
   } else {
     sendResponse({
       res,
-      status: 200,
+      statusCode: 200,
+      status: 'success',
       message: 'Product deleted',
     });
   }
