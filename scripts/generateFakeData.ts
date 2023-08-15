@@ -8,7 +8,7 @@ const DATA_DIRECTORY_PATH = path.resolve(process.cwd(), 'data');
 const PRODUCTS_NUM_RECORDS = 100;
 const USERS_NUM_RECORDS = 100;
 const BASE_PRICE_RANGE = { min: 100, max: 10000 };
-const PASSWORD = 'password'; // TODO: use proper encryption/hashing
+const PASSWORD = 'Password1';
 
 function createDataDir() {
   if (!fs.existsSync(DATA_DIRECTORY_PATH)) {
