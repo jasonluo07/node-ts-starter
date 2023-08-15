@@ -18,9 +18,7 @@ function createDataDir() {
 
 function createCsvFile(fileName: string, headers: string, rows: string[]) {
   const filePath = path.join(DATA_DIRECTORY_PATH, fileName);
-
   fs.writeFileSync(filePath, headers + rows.join(''));
-
   console.log(`${rows.length} fake records generated in ${fileName}`);
 }
 
