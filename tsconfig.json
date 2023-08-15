@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "es6", // TODO: I don't know what this is
+    "module": "commonjs", // TODO: I don't know what this is
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true // TODO: I don't know what this is
+  },
+  "include": ["src/**/*.ts"], // TODO: I don't know what this is
+  "exclude": ["node_modules"]
+}
