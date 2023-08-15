@@ -5,6 +5,8 @@ import express from 'express';
 import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
 
+import { checkPassword, generateToken } from './utils';
+
 const app = express();
 
 app.use(express.json());
@@ -185,6 +187,43 @@ app.delete('/products/:productId', async (req: Request, res: Response) => {
       message: 'Product deleted',
     });
   }
+});
+
+app.post('/auth/signin', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const connection = await pool.getConnection();
+  const [rows] = await connection.query<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
+  connection.release();
+
+  if (rows.length === 0) {
+    sendResponse({
+      res,
+      statusCode: HttpCode.UNAUTHORIZED,
+      message: 'Invalid email or password',
+    });
+    return;
+  }
+
+  const storedHashedPassword = rows[0].password;
+  const isPasswordValid = await checkPassword(password, storedHashedPassword);
+
+  if (!isPasswordValid) {
+    sendResponse({
+      res,
+      statusCode: HttpCode.UNAUTHORIZED,
+      message: 'Invalid email or password',
+    });
+    return;
+  }
+
+  const token = generateToken(email);
+  sendResponse({
+    res,
+    statusCode: HttpCode.OK,
+    message: 'Logged in successfully',
+    data: { token },
+  });
 });
 
 app.listen(process.env.PORT, () => {

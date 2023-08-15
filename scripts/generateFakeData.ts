@@ -1,5 +1,8 @@
+import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
+
+import { SALT_ROUNDS } from '../src/constants';
 
 const DATA_DIRECTORY_PATH = path.resolve(process.cwd(), 'data');
 const PRODUCTS_NUM_RECORDS = 100;
@@ -37,13 +40,14 @@ function generateProducts() {
   console.log('Generated products.csv');
 }
 
-function generateUsers() {
+async function generateUsers() {
   const headers = 'email,password\n';
   const rows: string[] = [];
 
   for (let i = 1; i <= USERS_NUM_RECORDS; i++) {
     const email = `user${i}@ex.com`;
-    rows.push(`${email},${PASSWORD}\n`);
+    const hashedPassword = await bcrypt.hash(PASSWORD, SALT_ROUNDS);
+    rows.push(`${email},${hashedPassword}\n`);
   }
 
   createCsvFile('users.csv', headers, rows);
