@@ -276,11 +276,26 @@ app.post(
   })
 );
 
+const dbErrorKeywords = ['SQL syntax', 'MySQL'];
+
+function isDbError(message: string): boolean {
+  return dbErrorKeywords.some((keyword) => message.includes(keyword));
+}
+
 // Error handling middleware
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof Error) {
+    if (isDbError(err.message)) {
+      sendResponse({
+        res,
+        statusCode: HttpCode.INTERNAL_SERVER_ERROR,
+        message: 'Database error, please try contacting the administrator',
+      });
+      return;
+    }
+
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
