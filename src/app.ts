@@ -231,12 +231,12 @@ app.post(
     const validationResult = signInSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      const errorMessage = formatZodError(validationResult.error);
+      const errorMessages = formatZodError(validationResult.error);
 
       sendResponse({
         res,
         statusCode: HttpCode.BAD_REQUEST,
-        message: errorMessage,
+        message: errorMessages,
       });
       return;
     }
