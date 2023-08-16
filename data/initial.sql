@@ -5,9 +5,9 @@ USE test;
 CREATE TABLE products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    description TEXT,
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price > 0),
     discount_price DECIMAL(10, 2) NOT NULL CHECK (discount_price > 0),
+    description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

@@ -70,7 +70,8 @@ const statusMapping: Record<HttpCode, ApiResponseStatus> = {
 interface Product {
   id: number;
   name: string;
-  price: number;
+  original_price: number;
+  discount_price: number;
   description: string;
 }
 
@@ -100,7 +101,9 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 app.get(
   '/products',
   catchAsyncError(async (_req, res) => {
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT id, name, original_price, discount_price, description FROM products'
+    );
 
     const products = rows as Product[];
 
@@ -119,7 +122,7 @@ app.get(
     const { productId } = req.params;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT id, name, price, description FROM products WHERE id = ?',
+      'SELECT id, name, original_price, discount_price, description FROM products WHERE id = ?',
       [productId]
     );
 
@@ -141,23 +144,15 @@ app.get(
 app.post(
   '/products',
   catchAsyncError(async (req, res) => {
-    const { name, price }: Omit<Product, 'id'> = req.body;
+    const { name, original_price, discount_price }: Omit<Product, 'id'> = req.body;
 
-    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO products (name, price) VALUES (?, ?)', [
-      name,
-      price,
-    ]);
-    // result = {
-    //   fieldCount: 0,
-    //   affectedRows: 1, // TODO: Check if the product is created
-    //   insertId: 101, // TODO: Get the inserted product id
-    //   info: '',
-    //   serverStatus: 2,
-    //   warningStatus: 0,
-    //   changedRows: 0
-    // }
+    const [result] = await pool.execute<ResultSetHeader>(
+      'INSERT INTO products (name, original_price, discount_price) VALUES (?, ?, ?)',
+      [name, original_price, discount_price]
+    );
+    const { affectedRows, insertId } = result;
 
-    if (result.affectedRows === 0) {
+    if (affectedRows === 0) {
       throw new DatabaseError('Product not created');
     }
 
@@ -165,6 +160,7 @@ app.post(
       res,
       statusCode: HttpCode.CREATED,
       message: 'Product created',
+      data: { id: insertId },
     });
   })
 );
@@ -173,14 +169,15 @@ app.put(
   '/products/:productId',
   catchAsyncError(async (req, res) => {
     const { productId } = req.params;
-    const { name, price, description }: Omit<Product, 'id'> = req.body;
+    const { name, original_price, discount_price, description }: Omit<Product, 'id'> = req.body;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      'UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?',
-      [name, price, description, productId]
+      'UPDATE products SET name = ?, original_price = ?, discount_price = ?, description = ? WHERE id = ?',
+      [name, original_price, discount_price, description, productId]
     );
+    const { affectedRows } = result;
 
-    if (result.affectedRows === 0) {
+    if (affectedRows === 0) {
       throw new NotFoundError('Product not found');
     }
 
@@ -198,8 +195,9 @@ app.delete(
     const { productId } = req.params;
 
     const [result] = await pool.execute<ResultSetHeader>('DELETE FROM products WHERE id = ?', [productId]);
+    const { affectedRows } = result;
 
-    if (result.affectedRows === 0) {
+    if (affectedRows === 0) {
       throw new NotFoundError('Product not found');
     }
 
@@ -350,7 +348,6 @@ function isDbError(message: string): boolean {
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  console.log('🚀 ~ file: app.ts:325 ~ app.use ~ err:', err);
   // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
   if (err instanceof NotFoundError) {
     sendResponse({
