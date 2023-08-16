@@ -29,6 +29,13 @@ class UnauthorizedError extends Error {
   }
 }
 
+class DatabaseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DatabaseError';
+  }
+}
+
 app.use(express.json());
 
 const access: ConnectionOptions = {
@@ -153,13 +160,7 @@ app.post(
     // }
 
     if (result.affectedRows === 0) {
-      // TODO: Handle Custom Error
-      sendResponse({
-        res,
-        statusCode: HttpCode.INTERNAL_SERVER_ERROR,
-        message: 'Product not created',
-      });
-      return;
+      throw new DatabaseError('Product not created');
     }
 
     sendResponse({
@@ -275,7 +276,7 @@ app.post(
     // }
 
     if (result.affectedRows === 0) {
-      // TODO: Handle Custom Error
+      throw new DatabaseError('User not created');
     }
 
     sendResponse({
@@ -360,6 +361,12 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     sendResponse({
       res,
       statusCode: HttpCode.UNAUTHORIZED,
+      message: err.message,
+    });
+  } else if (err instanceof DatabaseError) {
+    sendResponse({
+      res,
+      statusCode: HttpCode.INTERNAL_SERVER_ERROR,
       message: err.message,
     });
   } else if (err instanceof ZodError) {
