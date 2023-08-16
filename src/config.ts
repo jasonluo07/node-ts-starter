@@ -1,23 +1,51 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { z } from 'zod';
 
-const nodeEnv = process.env.NODE_ENV;
-console.log(`App is running in ${nodeEnv} mode`);
+// Constants and Configurations
+const DEFAULT_NODE_ENV = 'development';
+const nonEmptyString = z.string().nonempty({ message: 'Required' });
 
-if (!nodeEnv) {
-  console.log('The NODE_ENV environment variable is required but was not specified.');
-  process.exit(1);
+// Load environment files based on NODE_ENV
+function loadEnvFiles() {
+  const nodeEnv = process.env.NODE_ENV ?? DEFAULT_NODE_ENV;
+  console.log(`App is running in ${nodeEnv} mode`);
+
+  // Load default .env
+  dotenv.config();
+  // Load environment-specific .env (e.g., .env.development, .env.production, etc.)
+  dotenv.config({ path: path.resolve(process.cwd(), `.env.${nodeEnv}`) });
+  // Load local overrides
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 }
 
-// First, load the default .env file
-dotenv.config();
+// Define and validate the required environment variables
+function ensureRequiredEnvVariables() {
+  const envSchema = z.object({
+    HOST: nonEmptyString,
+    PORT: nonEmptyString,
+    DB_HOST: nonEmptyString,
+    DB_USER: nonEmptyString,
+    DB_PASSWORD: nonEmptyString,
+    DB_NAME: nonEmptyString,
+    JWT_SECRET: nonEmptyString,
+    JWT_EXPIRES_IN: nonEmptyString,
+  });
 
-// Based on the NODE_ENV, load the corresponding .env.{NODE_ENV} file
-dotenv.config({
-  path: path.resolve(process.cwd(), `.env.${nodeEnv}`),
-});
+  const validationResult = envSchema.safeParse(process.env);
 
-// Finally, load the .env.local file, typically used to override some local settings
-dotenv.config({
-  path: path.resolve(process.cwd(), '.env.local'),
-});
+  if (!validationResult.success) {
+    console.error('Environment variable validation failed:');
+    validationResult.error.issues.forEach((issue) => {
+      console.error(`- ${issue.path[0]}: ${issue.message}`);
+    });
+    process.exit(1);
+  }
+}
+
+function main() {
+  loadEnvFiles();
+  ensureRequiredEnvVariables();
+}
+
+main();
