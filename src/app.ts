@@ -2,6 +2,7 @@ import './config';
 
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { z, ZodError } from 'zod';
 
@@ -97,6 +98,45 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
   };
   res.status(statusCode).json(response);
 }
+
+interface UserPayload {
+  email: string;
+}
+
+type AuthenticatedRequest = Request & {
+  user?: UserPayload;
+};
+
+function authenticate(req: AuthenticatedRequest, _res: Response, next: NextFunction): void {
+  const { authorization } = req.headers;
+
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    throw new UnauthorizedError('Authorization header is required or malformed');
+  }
+
+  const token = authorization.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { email: string };
+    const { email } = decoded;
+    req.user = { email };
+    next();
+  } catch (err) {
+    throw new UnauthorizedError('Invalid token');
+  }
+}
+
+app.get('/test-auth', authenticate, (req: AuthenticatedRequest, res: Response) => {
+  // NOTE: req.user is defined in the authenticate middleware
+  //       another way to use type guard
+  const { email } = req.user as UserPayload;
+  sendResponse({
+    res,
+    statusCode: HttpCode.OK,
+    message: 'Authenticated successfully',
+    data: { email },
+  });
+});
 
 app.get(
   '/products',
