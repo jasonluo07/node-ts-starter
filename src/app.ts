@@ -229,6 +229,35 @@ app.put(
   })
 );
 
+app.patch(
+  '/products/:productId',
+  catchAsyncError(async (req, res) => {
+    const { productId } = req.params;
+    const updates = req.body;
+
+    const updateQueries = Object.keys(updates)
+      .map((key) => `${key} = ?`)
+      .join(', ');
+    const updateValues = Object.values(updates);
+
+    const [result] = await pool.execute<ResultSetHeader>(`UPDATE products SET ${updateQueries} WHERE id = ?`, [
+      ...updateValues,
+      productId,
+    ]);
+    const { affectedRows } = result;
+
+    if (affectedRows === 0) {
+      throw new NotFoundError('Product not found');
+    }
+
+    sendResponse({
+      res,
+      statusCode: HttpCode.OK,
+      message: 'Product partially updated',
+    });
+  })
+);
+
 app.delete(
   '/products/:productId',
   catchAsyncError(async (req, res) => {
