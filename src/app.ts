@@ -231,8 +231,13 @@ const signInSchema = z.object({
 app.post(
   '/auth/signin',
   catchAsyncError(async (req, res) => {
-    const validationResult = signInSchema.parse(req.body);
-    const { email, password } = validationResult;
+    const validationResult = signInSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      throw validationResult.error; // NOTE: Manually throw the ZodError
+    }
+
+    const { email, password } = validationResult.data;
 
     const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
 
