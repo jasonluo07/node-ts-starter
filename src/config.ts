@@ -11,12 +11,12 @@ function loadEnvFiles() {
   const nodeEnv = process.env.NODE_ENV ?? DEFAULT_NODE_ENV;
   console.log(`App is running in ${nodeEnv} mode`);
 
-  // Load default .env
-  dotenv.config();
-  // Load environment-specific .env (e.g., .env.development, .env.production, etc.)
-  dotenv.config({ path: path.resolve(process.cwd(), `.env.${nodeEnv}`) });
-  // Load local overrides
+  // Load .env.local
   dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+  // Load environment-specific .env file (e.g. .env.development, .env.test, .env.production etc.)
+  dotenv.config({ path: path.resolve(process.cwd(), `.env.${nodeEnv}`) });
+  // Load .env
+  dotenv.config();
 }
 
 // Define and validate the required environment variables
