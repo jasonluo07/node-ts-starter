@@ -72,7 +72,7 @@ function generateOrderItems() {
 
   for (let i = 1; i <= ORDER_ITEMS_NUM_RECORDS; i++) {
     const orderId = Math.ceil(i / ORDER_ITEMS_PER_ORDER);
-    const productId = Math.floor(Math.random() * products.length) + 1;
+    const productId = Math.floor(Math.random() * (products.length - 1)) + 1;
     const quantity = Math.floor(Math.random() * 10) + 1;
     const productData = products[productId - 1].split(',');
     const purchasePrice = parseFloat(productData[3]);
