@@ -142,6 +142,15 @@ app.post(
       name,
       price,
     ]);
+    // result = {
+    //   fieldCount: 0,
+    //   affectedRows: 1, // TODO: Check if the product is created
+    //   insertId: 101, // TODO: Get the inserted product id
+    //   info: '',
+    //   serverStatus: 2,
+    //   warningStatus: 0,
+    //   changedRows: 0
+    // }
 
     if (result.affectedRows === 0) {
       // TODO: Handle Custom Error
@@ -250,7 +259,24 @@ app.post(
 
     const hashedPassword = await hashPassword(password);
 
-    await pool.execute<ResultSetHeader>('INSERT INTO users (email, password) VALUES (?, ?)', [email, hashedPassword]);
+    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO users (email, password) VALUES (?, ?)', [
+      email,
+      hashedPassword,
+    ]);
+
+    // result = {
+    //   fieldCount: 0,
+    //   affectedRows: 1,
+    //   insertId: 102,
+    //   info: '',
+    //   serverStatus: 2,
+    //   warningStatus: 0,
+    //   changedRows: 0
+    // }
+
+    if (result.affectedRows === 0) {
+      // TODO: Handle Custom Error
+    }
 
     sendResponse({
       res,
