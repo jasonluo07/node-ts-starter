@@ -6,7 +6,7 @@ import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/p
 import mysql from 'mysql2/promise';
 import { z, ZodError } from 'zod';
 
-import { checkPassword, generateToken } from './utils';
+import { checkPassword, generateToken, hashPassword } from './utils';
 
 const app = express();
 
@@ -95,7 +95,7 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 app.get(
   '/products',
   catchAsyncError(async (_req, res) => {
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECTx id, name, price, description FROM products');
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
 
     const products = rows as Product[];
 
@@ -207,10 +207,61 @@ function formatZodError(error: z.ZodError): string {
   return error.issues.map((issue) => issue.message).join('\n');
 }
 
+const signUpSchema = z
+  .object({
+    email: z.string().email({ message: 'Invalid email' }),
+    password: z
+      .string()
+      .min(8, { message: 'Password must contain at least 8 character(s)' })
+      .refine(
+        (password) => {
+          const hasUpperCase = /[A-Z]/.test(password);
+          const hasLowerCase = /[a-z]/.test(password);
+          const hasDigit = /\d/.test(password);
+          return hasUpperCase && hasLowerCase && hasDigit;
+        },
+        {
+          message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter and 1 digit',
+        }
+      ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password and confirm password don't match",
+    path: ['confirmPassword'],
+  });
+
+app.post(
+  '/auth/signup',
+  catchAsyncError(async (req, res) => {
+    const validationResult = signUpSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      throw validationResult.error; // NOTE: Manually throw the ZodError
+    }
+
+    const { email, password } = validationResult.data;
+
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+
+    if (rows.length > 0) {
+      throw new UnauthorizedError('Email already exists');
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    await pool.execute<ResultSetHeader>('INSERT INTO users (email, password) VALUES (?, ?)', [email, hashedPassword]);
+
+    sendResponse({
+      res,
+      statusCode: HttpCode.CREATED,
+      message: 'User created successfully',
+    });
+  })
+);
+
 const signInSchema = z.object({
-  email: z.string().email({
-    message: 'Invalid email',
-  }),
+  email: z.string().email({ message: 'Invalid email' }),
   password: z
     .string()
     .min(8, { message: 'Password must contain at least 8 character(s)' })
@@ -219,7 +270,6 @@ const signInSchema = z.object({
         const hasUpperCase = /[A-Z]/.test(password);
         const hasLowerCase = /[a-z]/.test(password);
         const hasDigit = /\d/.test(password);
-
         return hasUpperCase && hasLowerCase && hasDigit;
       },
       {
@@ -272,6 +322,7 @@ function isDbError(message: string): boolean {
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.log('🚀 ~ file: app.ts:325 ~ app.use ~ err:', err);
   // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
   if (err instanceof NotFoundError) {
     sendResponse({

@@ -9,7 +9,14 @@
   "rules": {
     "indent": ["error", 2],
     "linebreak-style": ["error", "unix"],
-    "quotes": ["error", "single"],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true // allows strings to use double-quotes or single-quotes so long as the string contains a quote that would have to be escaped otherwise.
+      }
+    ],
+    // "quotes": ["error", "single"],
     "semi": ["error", "always"],
     // eslint-plugin-simple-import-sort
     "simple-import-sort/imports": "error",
