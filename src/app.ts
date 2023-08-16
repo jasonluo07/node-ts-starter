@@ -144,18 +144,20 @@ app.post(
     ]);
 
     if (result.affectedRows === 0) {
+      // TODO: Handle Custom Error
       sendResponse({
         res,
         statusCode: HttpCode.INTERNAL_SERVER_ERROR,
         message: 'Product not created',
       });
-    } else {
-      sendResponse({
-        res,
-        statusCode: HttpCode.CREATED,
-        message: 'Product created',
-      });
+      return;
     }
+
+    sendResponse({
+      res,
+      statusCode: HttpCode.CREATED,
+      message: 'Product created',
+    });
   })
 );
 
@@ -192,6 +194,7 @@ app.delete(
     if (result.affectedRows === 0) {
       throw new NotFoundError('Product not found');
     }
+
     sendResponse({
       res,
       statusCode: HttpCode.OK,
