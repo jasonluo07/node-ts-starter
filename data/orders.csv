@@ -1,0 +1,101 @@
+user_id,total_price,status,payment_method
+75,19043,Completed,Credit Card
+89,22556,Completed,Credit Card
+9,24466,Pending,PayPal
+48,28154,Cancelled,Bank Transfer
+98,15800,Pending,Credit Card
+50,19250,Completed,PayPal
+38,35373,Completed,PayPal
+38,14430,Completed,Credit Card
+42,11162,Cancelled,Bank Transfer
+27,18784,Completed,Bank Transfer
+12,16080,Completed,PayPal
+52,25235,Shipped,PayPal
+25,20516,Completed,PayPal
+70,22510,Pending,Bank Transfer
+60,10938,Shipped,PayPal
+72,17070,Pending,PayPal
+73,25941,Pending,Bank Transfer
+2,39224,Pending,PayPal
+91,11358,Pending,PayPal
+90,12333,Completed,Bank Transfer
+23,24376,Shipped,Bank Transfer
+49,18152,Pending,Credit Card
+36,32277,Shipped,Credit Card
+82,32262,Shipped,PayPal
+92,9481,Completed,Credit Card
+60,8390,Pending,PayPal
+8,24858,Cancelled,PayPal
+36,13292,Cancelled,Credit Card
+48,9836,Completed,PayPal
+17,34002,Cancelled,Credit Card
+97,32497,Completed,PayPal
+99,11752,Paid,Bank Transfer
+37,4546,Shipped,Credit Card
+14,26046,Cancelled,Bank Transfer
+39,17102,Shipped,Bank Transfer
+36,22182,Paid,PayPal
+85,29126,Pending,Credit Card
+48,14798,Shipped,Bank Transfer
+78,9741,Completed,PayPal
+12,25065,Shipped,PayPal
+23,19077,Cancelled,PayPal
+58,24540,Paid,Bank Transfer
+49,24040,Completed,Bank Transfer
+36,23450,Pending,PayPal
+43,54244,Cancelled,Credit Card
+95,29004,Pending,PayPal
+74,13202,Completed,PayPal
+32,57340,Cancelled,PayPal
+77,35758,Cancelled,Bank Transfer
+48,18002,Pending,Bank Transfer
+50,7852,Pending,Credit Card
+15,31228,Paid,Bank Transfer
+5,21899,Paid,Credit Card
+18,37731,Pending,Credit Card
+28,37933,Completed,Credit Card
+100,13315,Completed,PayPal
+12,39407,Completed,Credit Card
+59,24212,Cancelled,Bank Transfer
+51,10029,Shipped,PayPal
+34,8340,Completed,Credit Card
+36,17324,Paid,Bank Transfer
+76,19500,Cancelled,PayPal
+74,52762,Completed,Credit Card
+57,9207,Completed,PayPal
+46,28578,Shipped,PayPal
+56,44015,Shipped,Credit Card
+97,21588,Paid,Bank Transfer
+42,32817,Shipped,Bank Transfer
+45,22994,Completed,PayPal
+66,11905,Shipped,Credit Card
+92,13832,Completed,Bank Transfer
+18,17862,Paid,Credit Card
+48,39593,Completed,Credit Card
+97,18022,Paid,PayPal
+41,8908,Shipped,Credit Card
+88,10337,Cancelled,Bank Transfer
+7,48637,Completed,PayPal
+79,18890,Shipped,Credit Card
+50,17088,Shipped,PayPal
+82,26744,Cancelled,Credit Card
+7,19147,Shipped,Bank Transfer
+94,13073,Cancelled,Credit Card
+18,18430,Paid,PayPal
+5,21873,Paid,Bank Transfer
+70,42378,Cancelled,Credit Card
+44,8538,Completed,PayPal
+62,21140,Paid,Credit Card
+48,12474,Cancelled,Credit Card
+44,23145,Paid,Credit Card
+12,12202,Shipped,Credit Card
+52,19844,Completed,Bank Transfer
+59,20388,Shipped,PayPal
+30,8863,Completed,Bank Transfer
+74,33450,Pending,Credit Card
+89,7099,Completed,Credit Card
+80,48504,Pending,PayPal
+9,38206,Cancelled,PayPal
+41,24322,Completed,Bank Transfer
+20,32722,Completed,Bank Transfer
+99,34712,Pending,Credit Card
