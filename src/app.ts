@@ -109,7 +109,7 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 app.get(
   '/products',
   catchAsyncError(async (_req, res) => {
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECTx id, name, price, description FROM products');
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
 
     const products = rows as Product[];
 
