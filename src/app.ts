@@ -2,10 +2,10 @@ import './config';
 
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
-import type { ConnectionOptions, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
-import mysql from 'mysql2/promise';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { z, ZodError } from 'zod';
 
+import pool from './databases';
 import { checkPassword, generateToken, hashPassword } from './utils';
 
 const app = express();
@@ -44,15 +44,6 @@ class DatabaseError extends Error {
 }
 
 app.use(express.json());
-
-const access: ConnectionOptions = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-};
-
-const pool = mysql.createPool(access);
 
 enum HttpCode {
   OK = 200,
