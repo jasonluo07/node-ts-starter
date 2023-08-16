@@ -286,10 +286,13 @@ app.post(
       throw new DatabaseError('User not created');
     }
 
+    const token = generateToken(email);
+
     sendResponse({
       res,
       statusCode: HttpCode.CREATED,
       message: 'User created successfully',
+      data: { token },
     });
   })
 );
