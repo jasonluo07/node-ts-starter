@@ -12,7 +12,14 @@ const app = express();
 
 type AsyncFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
 export function catchAsyncError(fn: AsyncFunction) {
-  return (req: Request, res: Response, next: NextFunction) => Promise.resolve(fn(req, res, next)).catch(next);
+  return (req: Request, res: Response, next: NextFunction) =>
+    Promise.resolve(fn(req, res, next)).catch((err) => {
+      if (err instanceof Error && isDbError(err.message)) {
+        next(new DatabaseError('Database error, please try contacting the administrator'));
+      } else {
+        next(err);
+      }
+    });
 }
 
 class NotFoundError extends Error {
@@ -102,7 +109,7 @@ function sendResponse<T>({ res, statusCode, message, data }: SendResponseParams<
 app.get(
   '/products',
   catchAsyncError(async (_req, res) => {
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, name, price, description FROM products');
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECTx id, name, price, description FROM products');
 
     const products = rows as Product[];
 
@@ -377,15 +384,6 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
       message: errorMessages,
     });
   } else if (err instanceof Error) {
-    if (isDbError(err.message)) {
-      sendResponse({
-        res,
-        statusCode: HttpCode.INTERNAL_SERVER_ERROR,
-        message: 'Database error, please try contacting the administrator',
-      });
-      return;
-    }
-
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
