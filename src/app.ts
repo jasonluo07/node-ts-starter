@@ -205,11 +205,23 @@ app.post(
   })
 );
 
+const updateProductSchema = z.object({
+  name: z.string().min(1).max(255),
+  original_price: z.number().positive().min(100),
+  discount_price: z.number().positive().min(100),
+  description: z.string().default(''),
+});
+
 app.put(
   '/products/:productId',
   catchAsyncError(async (req, res) => {
     const { productId } = req.params;
-    const { name, original_price, discount_price, description }: Omit<Product, 'id'> = req.body;
+
+    const validationResult = updateProductSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw validationResult.error;
+    }
+    const { name, original_price, discount_price, description } = validationResult.data;
 
     const [result] = await pool.execute<ResultSetHeader>(
       'UPDATE products SET name = ?, original_price = ?, discount_price = ?, description = ? WHERE id = ?',
@@ -329,20 +341,13 @@ app.post(
       email,
       hashedPassword,
     ]);
+    const { affectedRows, insertId } = result;
 
-    // result = {
-    //   fieldCount: 0,
-    //   affectedRows: 1,
-    //   insertId: 102,
-    //   info: '',
-    //   serverStatus: 2,
-    //   warningStatus: 0,
-    //   changedRows: 0
-    // }
-
-    if (result.affectedRows === 0) {
+    if (affectedRows === 0) {
       throw new DatabaseError('User not created');
     }
+
+    console.log(`User created with id ${insertId}`);
 
     const token = generateToken(email);
 
