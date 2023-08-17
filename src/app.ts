@@ -1,4 +1,4 @@
-import './config';
+import '@/config';
 
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
@@ -6,8 +6,8 @@ import jwt from 'jsonwebtoken';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { z, ZodError } from 'zod';
 
-import pool from './databases';
-import { checkPassword, generateToken, hashPassword } from './utils';
+import pool from '@/databases';
+import { checkPassword, generateToken, hashPassword } from '@/utils';
 
 const app = express();
 

@@ -4,8 +4,15 @@
     "module": "commonjs", // TODO: I don't know what this is
     "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true // TODO: I don't know what this is
+    "esModuleInterop": true, // TODO: I don't know what this is
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/**/*.ts"], // TODO: I don't know what this is
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"] // tsconfig-paths is a package that allows us to use the paths we defined in tsconfig.json
+  }
 }

@@ -2,8 +2,6 @@ import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
 
-import { SALT_ROUNDS } from '../src/constants';
-
 const DATA_DIRECTORY_PATH = path.resolve(process.cwd(), 'data');
 const PRODUCTS_NUM_RECORDS = 100;
 const USERS_NUM_RECORDS = 100;
@@ -11,6 +9,7 @@ const ORDER_ITEMS_NUM_RECORDS = 300;
 const ORDER_ITEMS_PER_ORDER = 3;
 const PRICE_RANGE = { min: 100, max: 4000 };
 const PASSWORD = 'Password1';
+const SALT_ROUNDS = 10;
 
 function createDataDir() {
   if (!fs.existsSync(DATA_DIRECTORY_PATH)) {
