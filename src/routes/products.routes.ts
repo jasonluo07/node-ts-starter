@@ -30,7 +30,6 @@ router.get(
         c.name AS category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE 1 = 1
       LIMIT ? OFFSET ?
     `;
 
