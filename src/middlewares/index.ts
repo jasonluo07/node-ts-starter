@@ -2,9 +2,9 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ZodError } from 'zod';
 
-import { AuthenticatedRequest } from '@/app';
 import { HttpCode } from '@/enums';
 import { DatabaseError, NotFoundError, UnauthorizedError } from '@/errors';
+import type { AuthenticatedRequest } from '@/types';
 import { isDbError, sendResponse } from '@/utils';
 
 type AsyncFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;

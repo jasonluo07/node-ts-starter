@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { HttpCode } from '@/enums';
 
@@ -23,4 +23,12 @@ export interface SendResponseParams<T> {
   statusCode: HttpCode;
   message: string;
   data?: T;
+}
+
+export interface UserPayload {
+  email: string;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user?: UserPayload;
 }

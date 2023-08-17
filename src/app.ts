@@ -1,24 +1,17 @@
 import '@/config';
 
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import express from 'express';
 
 import { HttpCode } from '@/enums';
 import { authenticate, errorHandler } from '@/middlewares';
 import { authRouter, productsRouter } from '@/routes';
+import type { AuthenticatedRequest, UserPayload } from '@/types';
 import { sendResponse } from '@/utils';
 
 const app = express();
 
 app.use(express.json());
-
-export interface UserPayload {
-  email: string;
-}
-
-export interface AuthenticatedRequest extends Request {
-  user?: UserPayload;
-}
 
 app.get('/test-auth', authenticate, (req: AuthenticatedRequest, res: Response) => {
   // NOTE: req.user is defined in the authenticate middleware
