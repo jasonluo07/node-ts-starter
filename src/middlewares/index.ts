@@ -1,11 +1,22 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import winston from 'winston';
 import { ZodError } from 'zod';
 
 import { HttpCode } from '@/enums';
 import { DatabaseError, NotFoundError, UnauthorizedError } from '@/errors';
 import type { AuthenticatedRequest, UserPayload } from '@/types';
 import { isDbError, sendResponse } from '@/utils';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  defaultMeta: { service: 'user-service' },
+  transports: [
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.Console(),
+  ],
+});
 
 type AsyncFunction = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export function catchAsyncError(fn: AsyncFunction) {
@@ -45,6 +56,7 @@ function formatZodError(error: ZodError): string {
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  logger.error(err);
   // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
   if (err instanceof NotFoundError) {
     sendResponse({
@@ -59,6 +71,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: err.message,
     });
   } else if (err instanceof DatabaseError) {
+    logger.error(err);
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
@@ -72,12 +85,14 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: errorMessages,
     });
   } else if (err instanceof Error) {
+    logger.error(err);
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
       message: err.message,
     });
   } else {
+    logger.error(err);
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
