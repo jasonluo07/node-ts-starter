@@ -37,14 +37,16 @@ const productsQuerySchema = z.object({
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
+    // Validate the query parameters using the zod schema
     const validationResult = productsQuerySchema.safeParse(req.query);
-    if (!validationResult.success) {
-      throw validationResult.error;
-    }
+    if (!validationResult.success) throw validationResult.error;
 
     const { page, limit } = validationResult.data;
+
+    // Calculate the offset for SQL query based on page and limit
     const offset = (page - 1) * limit;
 
+    // Fetch the products based on the provided page and limit
     const query = `
       SELECT
         p.id, p.name, p.original_price, p.discount_price, p.description,
@@ -54,16 +56,34 @@ router.get(
       LIMIT ? OFFSET ?;
     `;
 
-    // FIXME: Why use toString?
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [limit.toString(), offset.toString()]);
+    const [productsResult] = await pool.execute<RowDataPacket[]>(query, [limit.toString(), offset.toString()]);
 
-    const products = rows as Product[];
+    // Fetch the total count of products
+    const [countResult] = await pool.execute<RowDataPacket[]>('SELECT COUNT(*) AS total FROM products');
 
+    const products = productsResult as Product[];
+
+    // Construct the pagination object with relevant details
+    const pagination = {
+      currentItems: products.length,
+      totalItems: countResult[0].total as number,
+      currentPage: page,
+      itemsPerPage: limit,
+      // NOTE: get syntax binds an object property to a function that will be called when that property is looked up.
+      get totalPages() {
+        return Math.ceil(this.totalItems / limit);
+      },
+    };
+
+    // Send the response with products and pagination details
     sendResponse({
       res,
       statusCode: HttpCode.OK,
       message: 'Products retrieved successfully',
-      data: products,
+      data: {
+        products,
+        pagination,
+      },
     });
   })
 );
