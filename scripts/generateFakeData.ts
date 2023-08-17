@@ -5,7 +5,7 @@ import path from 'path';
 const DATA_DIRECTORY_PATH = path.resolve(process.cwd(), 'data');
 const PRODUCTS_NUM_RECORDS = 100;
 const USERS_NUM_RECORDS = 100;
-const ORDER_ITEMS_NUM_RECORDS = 300;
+const ORDER_ITEMS_NUM_RECORDS = 3000;
 const ORDER_ITEMS_PER_ORDER = 3;
 const PRICE_RANGE = { min: 100, max: 4000 };
 const PASSWORD = 'Password1';
