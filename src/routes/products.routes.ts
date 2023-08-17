@@ -11,6 +11,7 @@ import { sendResponse } from '@/utils';
 
 const router = Router();
 
+// TODO: /products?page=2&limit=5&sort=price&order=desc
 router.get(
   '/',
   catchAsyncError(async (_req, res) => {
