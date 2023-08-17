@@ -30,8 +30,8 @@ export function authenticate(req: AuthenticatedRequest, _res: Response, next: Ne
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as UserPayload;
-    const { id, email } = decoded;
-    req.user = { id, email };
+    const { userId, email } = decoded;
+    req.user = { userId, email };
     next();
   } catch (err) {
     throw new UnauthorizedError('Invalid token');

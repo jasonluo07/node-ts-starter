@@ -73,7 +73,7 @@ router.post(
       res,
       statusCode: HttpCode.CREATED,
       message: 'Product created',
-      data: { id: insertId },
+      data: { userId: insertId },
     });
   })
 );

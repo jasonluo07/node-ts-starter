@@ -34,7 +34,7 @@ export interface SendResponseParams<T> {
 }
 
 export interface UserPayload {
-  id: number;
+  userId: number;
   email: string;
 }
 

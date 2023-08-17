@@ -13,12 +13,12 @@ const router = Router();
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
-    const { id } = req.user as UserPayload;
+    const { userId } = req.user as UserPayload;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
       // TODO: Study JOIN syntax
       'SELECT total_price, status, payment_method FROM orders WHERE user_id = ?;',
-      [id]
+      [userId]
     );
 
     const orders = rows as Order[];
@@ -36,9 +36,10 @@ router.get(
   '/:orderId',
   catchAsyncError(async (req, res) => {
     const { orderId } = req.params;
-    const { id } = req.user as UserPayload;
+    const { userId } = req.user as UserPayload;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
+      // TODO: Study JOIN syntax
       `
         SELECT 
           o.total_price, o.status, o.payment_method,
@@ -47,7 +48,7 @@ router.get(
         LEFT JOIN order_items oi ON o.id = oi.order_id
         WHERE o.id = ? AND o.user_id = ?;
       `,
-      [orderId, id]
+      [orderId, userId]
     );
 
     if (rows.length === 0) {

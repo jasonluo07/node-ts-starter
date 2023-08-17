@@ -65,7 +65,7 @@ router.post(
 
     console.log(`User created with id ${insertId}`);
 
-    const token = generateToken({ id: insertId, email });
+    const token = generateToken({ userId: insertId, email });
 
     sendResponse({
       res,
@@ -111,7 +111,7 @@ router.post(
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    const id = rows[0].id;
+    const userId = rows[0].id;
     const storedHashedPassword = rows[0].password;
     const isPasswordValid = await checkPassword(password, storedHashedPassword);
 
@@ -119,7 +119,7 @@ router.post(
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    const token = generateToken({ id, email });
+    const token = generateToken({ userId, email });
     sendResponse({
       res,
       statusCode: HttpCode.OK,
