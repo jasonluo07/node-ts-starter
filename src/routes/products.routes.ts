@@ -11,18 +11,40 @@ import { sendResponse } from '@/utils';
 
 const router = Router();
 
+const productsQuerySchema = z.object({
+  page: z
+    .string()
+    .regex(/^[1-9]\d*$/, {
+      message: 'Page must be a positive integer',
+    })
+    .optional()
+    .default('1')
+    .transform(Number),
+  limit: z
+    .string()
+    .regex(/^[1-9]\d*$/, {
+      message: 'Limit must be a positive integer',
+    })
+    .optional()
+    .default('10')
+    .transform(Number)
+    .refine((value) => value <= 100, {
+      message: 'Limit must be less than 100',
+    }),
+});
+
 // TODO: /products?page=2&limit=5&sortBy=price&order=desc
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
-    const { page = '1', limit = '10' } = req.query as {
-      page?: string;
-      limit?: string;
-    };
+    const validationResult = productsQuerySchema.safeParse(req.query);
+    if (!validationResult.success) {
+      throw validationResult.error;
+    }
+    console.log('🚀 ~ file: products.routes.ts:29 ~ catchAsyncError ~ validationResult.data:', validationResult.data);
 
-    const pageNumber = parseInt(page);
-    const limitNumber = parseInt(limit);
-    const offset = (pageNumber - 1) * limitNumber;
+    const { page, limit } = validationResult.data;
+    const offset = (page - 1) * limit;
 
     const query = `
       SELECT
@@ -33,7 +55,8 @@ router.get(
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [limitNumber.toString(), offset.toString()]);
+    // FIXME: Why use toString?
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [limit.toString(), offset.toString()]);
 
     const products = rows as Product[];
 
