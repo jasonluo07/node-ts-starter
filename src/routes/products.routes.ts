@@ -31,9 +31,11 @@ const productsQuerySchema = z.object({
     .refine((value) => value <= 100, {
       message: 'Limit must be less than 100',
     }),
+  sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
+  order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
-// TODO: /products?page=2&limit=5&sortBy=price&order=desc
+// GET /products?page=1&limit=10&sortBy=id&order=desc
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
@@ -41,7 +43,7 @@ router.get(
     const validationResult = productsQuerySchema.safeParse(req.query);
     if (!validationResult.success) throw validationResult.error;
 
-    const { page, limit } = validationResult.data;
+    const { page, limit, sortBy, order } = validationResult.data;
 
     // Calculate the offset for SQL query based on page and limit
     const offset = (page - 1) * limit;
@@ -53,6 +55,7 @@ router.get(
         c.name AS category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      ORDER BY ${sortBy} ${order.toUpperCase()}
       LIMIT ? OFFSET ?;
     `;
 
