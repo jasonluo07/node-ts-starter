@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 import { SALT_ROUNDS } from '@/constants';
 import { HttpCode } from '@/enums';
-import { ApiResponse, ApiResponseStatus, SendResponseParams } from '@/types';
+import { ApiResponse, ApiResponseStatus, SendResponseParams, UserPayload } from '@/types';
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
@@ -13,8 +13,9 @@ export async function checkPassword(password: string, hashPassword: string): Pro
   return bcrypt.compare(password, hashPassword);
 }
 
-export function generateToken(email: string): string {
-  return jwt.sign({ email }, process.env.JWT_SECRET!, { expiresIn: process.env.JWT_EXPIRES_IN });
+// email + id
+export function generateToken(payload: UserPayload): string {
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: process.env.JWT_EXPIRES_IN });
 }
 
 // TODO: ChatGPT 使用 try-catch

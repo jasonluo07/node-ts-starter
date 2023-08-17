@@ -4,7 +4,7 @@ import { ZodError } from 'zod';
 
 import { HttpCode } from '@/enums';
 import { DatabaseError, NotFoundError, UnauthorizedError } from '@/errors';
-import type { AuthenticatedRequest } from '@/types';
+import type { AuthenticatedRequest, UserPayload } from '@/types';
 import { isDbError, sendResponse } from '@/utils';
 
 type AsyncFunction = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
@@ -29,9 +29,9 @@ export function authenticate(req: AuthenticatedRequest, _res: Response, next: Ne
   const token = authorization.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { email: string };
-    const { email } = decoded;
-    req.user = { email };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as UserPayload;
+    const { id, email } = decoded;
+    req.user = { id, email };
     next();
   } catch (err) {
     throw new UnauthorizedError('Invalid token');

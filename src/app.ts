@@ -16,12 +16,12 @@ app.use(express.json());
 app.get('/test-auth', authenticate, (req: AuthenticatedRequest, res: Response) => {
   // NOTE: req.user is defined in the authenticate middleware
   //       another way to use type guard
-  const { email } = req.user as UserPayload;
+  const { id, email } = req.user as UserPayload;
   sendResponse({
     res,
     statusCode: HttpCode.OK,
     message: 'Authenticated successfully',
-    data: { email },
+    data: { id, email },
   });
 });
 

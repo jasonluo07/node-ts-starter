@@ -65,7 +65,7 @@ router.post(
 
     console.log(`User created with id ${insertId}`);
 
-    const token = generateToken(email);
+    const token = generateToken({ id: insertId, email });
 
     sendResponse({
       res,
@@ -105,12 +105,13 @@ router.post(
 
     const { email, password } = validationResult.data;
 
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECT password FROM users WHERE email = ?', [email]);
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT id, password FROM users WHERE email = ?', [email]);
 
     if (rows.length === 0) {
       throw new UnauthorizedError('Invalid email or password');
     }
 
+    const id = rows[0].id;
     const storedHashedPassword = rows[0].password;
     const isPasswordValid = await checkPassword(password, storedHashedPassword);
 
@@ -118,7 +119,7 @@ router.post(
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    const token = generateToken(email);
+    const token = generateToken({ id, email });
     sendResponse({
       res,
       statusCode: HttpCode.OK,
