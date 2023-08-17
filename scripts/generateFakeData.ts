@@ -34,14 +34,16 @@ function readCsvFile(fileName: string) {
 }
 
 function generateProducts() {
-  const headers = 'name,description,original_price,discount_price\n';
+  const headers = 'category_id,name,description,original_price,discount_price\n';
   const rows: string[] = [];
 
-  for (let i = 1; i <= PRODUCTS_NUM_RECORDS; i++) {
+  for (let i = 0; i < PRODUCTS_NUM_RECORDS; i++) {
+    const id = i + 1;
+    const categoryId = (i % 10) + 1;
     const originalPrice = Math.floor(Math.random() * (PRICE_RANGE.max - PRICE_RANGE.min + 1)) + PRICE_RANGE.min;
     const discountRate = 0.2 + Math.random() * 0.8; // 0.2 ~ 1.0
     const discountPrice = Math.floor(originalPrice * discountRate);
-    rows.push(`Product ${i},Description for Product ${i},${originalPrice},${discountPrice}\n`);
+    rows.push(`${categoryId},Product ${id},Description for Product ${id},${originalPrice},${discountPrice}\n`);
   }
 
   createCsvFile('products.csv', headers, rows);
@@ -52,8 +54,9 @@ async function generateUsers() {
   const headers = 'email,password\n';
   const rows: string[] = [];
 
-  for (let i = 1; i <= USERS_NUM_RECORDS; i++) {
-    const email = `user${i}@ex.com`;
+  for (let i = 0; i < USERS_NUM_RECORDS; i++) {
+    const id = i + 1;
+    const email = `user${id}@ex.com`;
     const hashedPassword = await bcrypt.hash(PASSWORD, SALT_ROUNDS);
     rows.push(`${email},${hashedPassword}\n`);
   }
@@ -69,8 +72,9 @@ function generateOrderItems() {
 
   const products = readCsvFile('products.csv');
 
-  for (let i = 1; i <= ORDER_ITEMS_NUM_RECORDS; i++) {
-    const orderId = Math.ceil(i / ORDER_ITEMS_PER_ORDER);
+  for (let i = 0; i < ORDER_ITEMS_NUM_RECORDS; i++) {
+    const id = i + 1;
+    const orderId = Math.ceil(id / ORDER_ITEMS_PER_ORDER);
     const productId = Math.floor(Math.random() * (products.length - 1)) + 1;
     const quantity = Math.floor(Math.random() * 10) + 1;
     const productData = products[productId - 1].split(',');
