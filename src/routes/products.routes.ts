@@ -11,13 +11,30 @@ import { sendResponse } from '@/utils';
 
 const router = Router();
 
-// TODO: /products?page=2&limit=5&sort=price&order=desc
+// TODO: /products?page=2&limit=5&sortBy=price&order=desc
 router.get(
   '/',
-  catchAsyncError(async (_req, res) => {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT id, name, original_price, discount_price, description FROM products'
-    );
+  catchAsyncError(async (req, res) => {
+    const { page = '1', limit = '10' } = req.query as {
+      page?: string;
+      limit?: string;
+    };
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const offset = (pageNumber - 1) * limitNumber;
+
+    const query = `
+      SELECT
+        p.id, p.name, p.original_price, p.discount_price, p.description,
+        c.name AS category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE 1 = 1
+      LIMIT ? OFFSET ?
+    `;
+
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [limitNumber.toString(), offset.toString()]);
 
     const products = rows as Product[];
 

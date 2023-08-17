@@ -10,6 +10,7 @@ export interface Product {
   original_price: number;
   discount_price: number;
   description: string;
+  category_name: string;
 }
 
 export interface Order {
