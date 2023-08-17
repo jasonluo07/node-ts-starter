@@ -13,12 +13,12 @@ const router = Router();
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
-    const { email } = req.user as UserPayload;
+    const { id } = req.user as UserPayload;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
       // TODO: Study JOIN syntax
-      'SELECT total_price, status, payment_method FROM orders JOIN users ON orders.user_id = users.id WHERE email = ?',
-      [email]
+      'SELECT total_price, status, payment_method FROM orders WHERE user_id = ?;',
+      [id]
     );
 
     const orders = rows as Order[];
@@ -36,25 +36,40 @@ router.get(
   '/:orderId',
   catchAsyncError(async (req, res) => {
     const { orderId } = req.params;
-    const { email } = req.user as UserPayload;
+    const { id } = req.user as UserPayload;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      // TODO: Again
-      'SELECT * FROM orders JOIN users ON orders.user_id = users.id WHERE orders.id = ? AND users.email = ?;',
-      [orderId, email]
+      `
+        SELECT 
+          o.total_price, o.status, o.payment_method,
+          oi.product_id, oi.quantity, oi.purchase_price
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        WHERE o.id = ? AND o.user_id = ?;
+      `,
+      [orderId, id]
     );
 
     if (rows.length === 0) {
       throw new NotFoundError('Order not found');
     }
 
-    const order = rows[0] as Order;
+    const orderDetails = {
+      total_price: rows[0].total_price,
+      status: rows[0].status,
+      payment_method: rows[0].payment_method,
+      items: rows.map((row) => ({
+        product_id: row.product_id,
+        quantity: row.quantity,
+        purchase_price: row.purchase_price,
+      })),
+    };
 
     sendResponse({
       res,
       statusCode: HttpCode.OK,
       message: 'Order retrieved successfully',
-      data: order,
+      data: orderDetails,
     });
   })
 );
