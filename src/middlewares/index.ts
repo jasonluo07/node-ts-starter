@@ -23,6 +23,7 @@ export function catchAsyncError(fn: AsyncFunction) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch((err) => {
       if (err instanceof Error && isDbError(err.message)) {
+        logger.error(err.message);
         next(new DatabaseError('Database error, please try contacting the administrator'));
       } else {
         next(err);
@@ -56,7 +57,6 @@ function formatZodError(error: ZodError): string {
 // NOTE: _next is required for express to recognize this as an error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
-  logger.error(err);
   // NOTE: ZodError must be checked before Error because ZodError is an instance of Error
   if (err instanceof NotFoundError) {
     sendResponse({
@@ -71,7 +71,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: err.message,
     });
   } else if (err instanceof DatabaseError) {
-    logger.error(err);
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,
@@ -85,7 +84,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: errorMessages,
     });
   } else if (err instanceof Error) {
-    logger.error(err);
+    logger.error(err.message);
     sendResponse({
       res,
       statusCode: HttpCode.INTERNAL_SERVER_ERROR,

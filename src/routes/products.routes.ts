@@ -41,7 +41,6 @@ router.get(
     if (!validationResult.success) {
       throw validationResult.error;
     }
-    console.log('🚀 ~ file: products.routes.ts:29 ~ catchAsyncError ~ validationResult.data:', validationResult.data);
 
     const { page, limit } = validationResult.data;
     const offset = (page - 1) * limit;
@@ -52,7 +51,7 @@ router.get(
         c.name AS category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      LIMIT ? OFFSET ?
+      LIMIT ? OFFSET ?;
     `;
 
     // FIXME: Why use toString?

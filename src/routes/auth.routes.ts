@@ -63,8 +63,6 @@ router.post(
       throw new DatabaseError('User not created');
     }
 
-    console.log(`User created with id ${insertId}`);
-
     const token = generateToken({ userId: insertId, email });
 
     sendResponse({
