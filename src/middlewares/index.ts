@@ -7,9 +7,9 @@ import { DatabaseError, NotFoundError, UnauthorizedError } from '@/errors';
 import type { AuthenticatedRequest } from '@/types';
 import { isDbError, sendResponse } from '@/utils';
 
-type AsyncFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+type AsyncFunction = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export function catchAsyncError(fn: AsyncFunction) {
-  return (req: Request, res: Response, next: NextFunction) =>
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch((err) => {
       if (err instanceof Error && isDbError(err.message)) {
         next(new DatabaseError('Database error, please try contacting the administrator'));

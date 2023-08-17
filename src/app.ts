@@ -5,7 +5,7 @@ import express from 'express';
 
 import { HttpCode } from '@/enums';
 import { authenticate, errorHandler } from '@/middlewares';
-import { authRouter, productsRouter } from '@/routes';
+import { authRouter, ordersRouter, productsRouter } from '@/routes';
 import type { AuthenticatedRequest, UserPayload } from '@/types';
 import { sendResponse } from '@/utils';
 
@@ -28,6 +28,7 @@ app.get('/test-auth', authenticate, (req: AuthenticatedRequest, res: Response) =
 // Register routes
 app.use('/auth', authRouter);
 app.use('/products', productsRouter);
+app.use('/orders', authenticate, ordersRouter);
 
 app.use(errorHandler);
 

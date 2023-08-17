@@ -12,6 +12,14 @@ export interface Product {
   description: string;
 }
 
+export interface Order {
+  id: number;
+  user_id: number;
+  total_price: number;
+  status: 'Pending' | 'Paid' | 'Shipped' | 'Completed' | 'Cancelled';
+  payment_method: 'Credit Card' | 'PayPal' | 'Bank Transfer';
+}
+
 export interface ApiResponse<T> {
   status: ApiResponseStatus;
   message: string;
