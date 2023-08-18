@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import _ from 'lodash';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import z from 'zod';
 
@@ -50,12 +51,16 @@ const productsQuerySchema = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
-// GET /products?category=&search=&page=1&limit=10&sortBy=id&order=desc
+// GET /products?category=&search=&page=1&limit=10&sort_by=id&order=desc
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
+    // Convert snake_case keys in req.query to camelCase
+    const plainQuery = req.query;
+    const camelCasedQuery = _.mapKeys(plainQuery, (_value, key) => _.camelCase(key));
+
     // Validate the query parameters using the zod schema
-    const validationResult = productsQuerySchema.safeParse(req.query);
+    const validationResult = productsQuerySchema.safeParse(camelCasedQuery);
     if (!validationResult.success) throw validationResult.error;
 
     const { category, search, page, limit, sortBy, order } = validationResult.data;
