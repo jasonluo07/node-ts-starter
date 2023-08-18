@@ -188,7 +188,7 @@ router.get(
       res,
       statusCode: HttpCode.OK,
       message: 'Product retrieved successfully',
-      data: product,
+      data: { product },
     });
   })
 );
