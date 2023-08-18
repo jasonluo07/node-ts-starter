@@ -58,7 +58,7 @@ const productsQuerySchema = z
       .default('10')
       .transform(Number)
       .refine((value) => value <= 100, {
-        message: 'Limit must be less than 100',
+        message: 'Limit must be less than or equal to 100',
       }),
     sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
     order: z.enum(['asc', 'desc']).optional().default('desc'),
@@ -112,7 +112,6 @@ router.get(
     // Fetch the total count of products
     let countQuery = 'SELECT COUNT(*) AS total FROM products p LEFT JOIN categories c ON p.category_id = c.id';
 
-    // prettier-ignore
     const countWhereClauses = _.compact([
       category && `c.name = '${category}'`,
       priceMin && `p.discount_price >= ${priceMin}`,
