@@ -306,7 +306,7 @@ router.patch(
 );
 
 router.delete(
-  '/products/:productId',
+  '/:productId',
   catchAsyncError(async (req, res) => {
     const { productId } = req.params;
 
