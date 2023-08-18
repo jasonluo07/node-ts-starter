@@ -76,16 +76,15 @@ router.get(
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
     `;
-    const productsWhereClauses = [];
-    if (category) {
-      productsWhereClauses.push(`c.name = '${category}'`);
-    }
-    if (search) {
-      productsWhereClauses.push(`p.name LIKE '%${search}%'`);
-    }
+
+    const productsWhereClauses = _.compact([
+      category && `c.name = '${category}'`,
+      search && `p.name LIKE '%${search}%'`,
+    ]);
     if (productsWhereClauses.length > 0) {
       productsQuery += ' WHERE ' + productsWhereClauses.join(' AND ');
     }
+
     productsQuery += `
       ORDER BY ${sortBy} ${order.toUpperCase()}
       LIMIT ? OFFSET ?;
@@ -95,13 +94,13 @@ router.get(
 
     // Fetch the total count of products
     let countQuery = 'SELECT COUNT(*) AS total FROM products p LEFT JOIN categories c ON p.category_id = c.id';
-    const countWhereClauses = [];
-    if (category) {
-      countWhereClauses.push(`c.name = '${category}'`);
-    }
-    if (search) {
-      countWhereClauses.push(`p.name LIKE '%${search}%'`);
-    }
+
+    // prettier-ignore
+    const countWhereClauses = _.compact([
+      category && `c.name = '${category}'`,
+      search && `p.name LIKE '%${search}%'`,
+    ]);
+
     if (countWhereClauses.length > 0) {
       countQuery += ' WHERE ' + countWhereClauses.join(' AND ');
     }
