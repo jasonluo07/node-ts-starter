@@ -168,10 +168,19 @@ router.get(
   })
 );
 
+const productQuerySchema = z.object({
+  productId: z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .transform(Number),
+});
+
 router.get(
   '/:productId',
   catchAsyncError(async (req, res) => {
-    const { productId } = req.params;
+    const validationResult = productQuerySchema.safeParse(req.params);
+    if (!validationResult.success) throw validationResult.error;
+    const { productId } = validationResult.data;
 
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT id, name, original_price, discount_price, description FROM products WHERE id = ?',

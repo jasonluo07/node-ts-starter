@@ -80,15 +80,24 @@ describe('Product Routes', () => {
   });
 
   describe('GET /products/:productId', () => {
-    it('returns a product with the specific id', async () => {
-      const response = await request(app).get(`${baseURL}/1`);
+    it('returns a product with a valid product id', async () => {
+      const productId = 1;
+      const response = await request(app).get(`${baseURL}/${productId}`);
       expect(response.status).toBe(HttpCode.OK);
       expect(response.body.data).toHaveProperty('product');
       expect(response.body.data.product.id).toBe(1);
+      expect(response.body.data.product.name).toBe('Product 1');
     });
 
-    it('returns 404 for invalid product id', async () => {
-      const response = await request(app).get(`${baseURL}/1000`);
+    it('returns 400 for invalid product id', async () => {
+      const invalidProductId = 'invalidProductId';
+      const response = await request(app).get(`${baseURL}/${invalidProductId}`);
+      expect(response.status).toBe(HttpCode.BAD_REQUEST);
+    });
+
+    it('returns 404 for non-existent product id', async () => {
+      const nonExistentProductId = 9999;
+      const response = await request(app).get(`${baseURL}/${nonExistentProductId}`);
       expect(response.status).toBe(HttpCode.NOT_FOUND);
     });
   });
