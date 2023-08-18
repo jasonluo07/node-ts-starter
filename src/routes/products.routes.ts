@@ -12,6 +12,20 @@ import { sendResponse } from '@/utils';
 const router = Router();
 
 const productsQuerySchema = z.object({
+  category: z
+    .enum([
+      'Electronics',
+      'Books',
+      'Home Decor',
+      'Clothing',
+      'Food & Beverages',
+      'Health & Beauty',
+      'Sports & Leisure',
+      'Toys',
+      'Handicrafts',
+      'Office Supplies',
+    ])
+    .optional(),
   page: z
     .string()
     .regex(/^[1-9]\d*$/, {
@@ -43,26 +57,35 @@ router.get(
     const validationResult = productsQuerySchema.safeParse(req.query);
     if (!validationResult.success) throw validationResult.error;
 
-    const { page, limit, sortBy, order } = validationResult.data;
+    const { category, page, limit, sortBy, order } = validationResult.data;
 
     // Calculate the offset for SQL query based on page and limit
     const offset = (page - 1) * limit;
 
     // Fetch the products based on the provided page and limit
-    const query = `
+    let productsQuery = `
       SELECT
         p.id, p.name, p.original_price, p.discount_price, p.description,
         c.name AS category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+    `;
+    if (category) {
+      productsQuery += ` WHERE c.name = '${category}' `;
+    }
+    productsQuery += `
       ORDER BY ${sortBy} ${order.toUpperCase()}
       LIMIT ? OFFSET ?;
     `;
 
-    const [productsResult] = await pool.execute<RowDataPacket[]>(query, [limit.toString(), offset.toString()]);
+    const [productsResult] = await pool.execute<RowDataPacket[]>(productsQuery, [limit.toString(), offset.toString()]);
 
     // Fetch the total count of products
-    const [countResult] = await pool.execute<RowDataPacket[]>('SELECT COUNT(*) AS total FROM products');
+    let countQuery = 'SELECT COUNT(*) AS total FROM products';
+    if (category) {
+      countQuery += ` p LEFT JOIN categories c ON p.category_id = c.id WHERE c.name = '${category}';`;
+    }
+    const [countResult] = await pool.execute<RowDataPacket[]>(countQuery);
 
     const products = productsResult as Product[];
 
