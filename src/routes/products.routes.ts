@@ -202,14 +202,28 @@ router.get(
   })
 );
 
+const createProductSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    categoryId: z.number().int().positive(),
+    originalPrice: z.number().positive().min(100),
+    discountPrice: z.number().positive().min(100),
+  })
+  .refine((data) => data.discountPrice < data.originalPrice);
+
 router.post(
   '/',
   catchAsyncError(async (req, res) => {
-    const { name, original_price, discount_price }: Omit<Product, 'id'> = req.body;
+    const validationResult = createProductSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw validationResult.error;
+    }
+
+    const { name, categoryId, originalPrice, discountPrice } = validationResult.data;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO products (name, original_price, discount_price) VALUES (?, ?, ?)',
-      [name, original_price, discount_price]
+      'INSERT INTO products (name, original_price, discount_price, category_id) VALUES (?, ?, ?, ?)',
+      [name, originalPrice, discountPrice, categoryId]
     );
     const { affectedRows, insertId } = result;
 
@@ -221,7 +235,7 @@ router.post(
       res,
       statusCode: HttpCode.CREATED,
       message: 'Product created',
-      data: { userId: insertId },
+      data: { productId: insertId },
     });
   })
 );

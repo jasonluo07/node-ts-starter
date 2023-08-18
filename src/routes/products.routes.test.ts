@@ -101,4 +101,30 @@ describe('Product Routes', () => {
       expect(response.status).toBe(HttpCode.NOT_FOUND);
     });
   });
+
+  describe('POST /products', () => {
+    it('creates a product with valid data', async () => {
+      const productData = {
+        name: 'New Product',
+        categoryId: 1,
+        originalPrice: 1000,
+        discountPrice: 900,
+      };
+      const response = await request(app).post(`${baseURL}`).send(productData);
+      expect(response.status).toBe(HttpCode.CREATED);
+      expect(response.body.data).toHaveProperty('productId');
+      expect(response.body.data.productId).toBeGreaterThan(0);
+    });
+
+    it('returns 400 for invalid data', async () => {
+      const productData = {
+        name: 'New Product',
+        categoryId: 1,
+        originalPrice: 1000,
+        discountPrice: 1100,
+      };
+      const response = await request(app).post(`${baseURL}`).send(productData);
+      expect(response.status).toBe(HttpCode.BAD_REQUEST);
+    });
+  });
 });
