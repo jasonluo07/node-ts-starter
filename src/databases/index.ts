@@ -20,4 +20,9 @@ pool
     console.error('Error connecting to the database:', error);
   });
 
+export async function disconnectDatabase(): Promise<void> {
+  await pool.end();
+  console.log('Successfully disconnected from the database.');
+}
+
 export default pool;
