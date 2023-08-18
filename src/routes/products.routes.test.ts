@@ -71,9 +71,9 @@ describe('GET /products', () => {
       expect(response.status).toBe(HttpCode.BAD_REQUEST);
     });
 
-    // it('returns 400 for invalid price range', async () => {
-    //   const response = await request(app).get(`${baseURL}?priceMin=1000&priceMax=100`);
-    //   expect(response.status).toBe(HttpCode.BAD_REQUEST);
-    // });
+    it('returns 400 for invalid price range', async () => {
+      const response = await request(app).get(`${baseURL}?priceMin=1000&priceMax=100`);
+      expect(response.status).toBe(HttpCode.BAD_REQUEST);
+    });
   });
 });

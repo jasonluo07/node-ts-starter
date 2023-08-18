@@ -12,68 +12,69 @@ import { sendResponse } from '@/utils';
 
 const router = Router();
 
-const productsQuerySchema = z.object({
-  category: z
-    .enum([
-      'Electronics',
-      'Books',
-      'Home Decor',
-      'Clothing',
-      'Food & Beverages',
-      'Health & Beauty',
-      'Sports & Leisure',
-      'Toys',
-      'Handicrafts',
-      'Office Supplies',
-    ])
-    .optional(),
-  priceMin: z
-    .string()
-    .regex(/^\d+$/, {
-      message: 'Minium price must be a non-negative integer',
-    })
-    .optional()
-    .transform(Number),
-  priceMax: z
-    .string()
-    .regex(/^[1-9]\d*$/, { message: 'Maximum price must be a positive integer' })
-    .optional()
-    .transform(Number),
-  search: z.string().optional(),
-  page: z
-    .string()
-    .regex(/^[1-9]\d*$/, {
-      message: 'Page must be a positive integer',
-    })
-    .optional()
-    .default('1')
-    .transform(Number),
-  limit: z
-    .string()
-    .regex(/^[1-9]\d*$/, {
-      message: 'Limit must be a positive integer',
-    })
-    .optional()
-    .default('10')
-    .transform(Number)
-    .refine((value) => value <= 100, {
-      message: 'Limit must be less than or equal to 100',
-    }),
-  sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-});
-// TODO: 這裡的 refine 有點問題，因為 priceMin 和 priceMax 都是 optional，所以不會有 undefined 的情況
-// .refine(
-//   (data) => {
-//     if (data.priceMin === undefined || data.priceMax === undefined) {
-//       return true;
-//     }
-//     return data.priceMin < data.priceMax;
-//   },
-//   {
-//     message: 'Minimum price must be less than maximum price',
-//   }
-// );
+const productsQuerySchema = z
+  .object({
+    category: z
+      .enum([
+        'Electronics',
+        'Books',
+        'Home Decor',
+        'Clothing',
+        'Food & Beverages',
+        'Health & Beauty',
+        'Sports & Leisure',
+        'Toys',
+        'Handicrafts',
+        'Office Supplies',
+      ])
+      .optional(),
+    priceMin: z
+      .string()
+      .regex(/^\d+$/, {
+        message: 'Minium price must be a non-negative integer',
+      })
+      .optional()
+      .transform(Number),
+    priceMax: z
+      .string()
+      .regex(/^[1-9]\d*$/, { message: 'Maximum price must be a positive integer' })
+      .optional()
+      .transform(Number),
+    search: z.string().optional(),
+    page: z
+      .string()
+      .regex(/^[1-9]\d*$/, {
+        message: 'Page must be a positive integer',
+      })
+      .optional()
+      .default('1')
+      .transform(Number),
+    limit: z
+      .string()
+      .regex(/^[1-9]\d*$/, {
+        message: 'Limit must be a positive integer',
+      })
+      .optional()
+      .default('10')
+      .transform(Number)
+      .refine((value) => value <= 100, {
+        message: 'Limit must be less than or equal to 100',
+      }),
+    sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
+    order: z.enum(['asc', 'desc']).optional().default('desc'),
+  })
+  .refine(
+    (data) => {
+      if (isNaN(data.priceMin) || isNaN(data.priceMax)) {
+        return true;
+      }
+      return data.priceMin < data.priceMax;
+    },
+    {
+      message: 'Minimum price must be less than maximum price',
+    }
+  );
+
 // GET /products?category=&priceMin=1000&priceMax=5000&search=&page=1&limit=10&sort_by=id&order=desc
 router.get(
   '/',
