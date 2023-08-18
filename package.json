@@ -9,8 +9,8 @@
     "seed": "ts-node scripts/generateFakeData.ts",
     "lint": "eslint src --fix",
     "format": "prettier -w .",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "NODE_ENV=test jest",
+    "test:watch": "NODE_ENV=test jest --watch",
     "prepare": "husky install"
   },
   "keywords": [],

@@ -11,9 +11,7 @@ function loadEnvFiles() {
   const nodeEnv = process.env.NODE_ENV ?? DEFAULT_NODE_ENV;
   console.log(`App is running in ${nodeEnv} mode`);
 
-  // Load .env.local
-  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-  // Load environment-specific .env file (e.g. .env.development, .env.test, .env.production etc.)
+  // Load environment-specific .env file (e.g. .env.local, .env.development, .env.test, .env.production etc.)
   dotenv.config({ path: path.resolve(process.cwd(), `.env.${nodeEnv}`) });
   // Load .env
   dotenv.config();
