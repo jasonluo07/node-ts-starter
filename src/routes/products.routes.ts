@@ -50,7 +50,7 @@ const productsQuerySchema = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
-// GET /products?page=1&limit=10&sortBy=id&order=desc
+// GET /products?category=&search=&page=1&limit=10&sortBy=id&order=desc
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
