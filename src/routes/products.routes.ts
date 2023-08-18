@@ -26,6 +26,7 @@ const productsQuerySchema = z.object({
       'Office Supplies',
     ])
     .optional(),
+  search: z.string().optional(),
   page: z
     .string()
     .regex(/^[1-9]\d*$/, {
@@ -57,7 +58,7 @@ router.get(
     const validationResult = productsQuerySchema.safeParse(req.query);
     if (!validationResult.success) throw validationResult.error;
 
-    const { category, page, limit, sortBy, order } = validationResult.data;
+    const { category, search, page, limit, sortBy, order } = validationResult.data;
 
     // Calculate the offset for SQL query based on page and limit
     const offset = (page - 1) * limit;
@@ -70,8 +71,15 @@ router.get(
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
     `;
+    const productsWhereClauses = [];
     if (category) {
-      productsQuery += ` WHERE c.name = '${category}' `;
+      productsWhereClauses.push(`c.name = '${category}'`);
+    }
+    if (search) {
+      productsWhereClauses.push(`p.name LIKE '%${search}%'`);
+    }
+    if (productsWhereClauses.length > 0) {
+      productsQuery += ' WHERE ' + productsWhereClauses.join(' AND ');
     }
     productsQuery += `
       ORDER BY ${sortBy} ${order.toUpperCase()}
@@ -81,10 +89,18 @@ router.get(
     const [productsResult] = await pool.execute<RowDataPacket[]>(productsQuery, [limit.toString(), offset.toString()]);
 
     // Fetch the total count of products
-    let countQuery = 'SELECT COUNT(*) AS total FROM products';
+    let countQuery = 'SELECT COUNT(*) AS total FROM products p LEFT JOIN categories c ON p.category_id = c.id';
+    const countWhereClauses = [];
     if (category) {
-      countQuery += ` p LEFT JOIN categories c ON p.category_id = c.id WHERE c.name = '${category}';`;
+      countWhereClauses.push(`c.name = '${category}'`);
     }
+    if (search) {
+      countWhereClauses.push(`p.name LIKE '%${search}%'`);
+    }
+    if (countWhereClauses.length > 0) {
+      countQuery += ' WHERE ' + countWhereClauses.join(' AND ');
+    }
+
     const [countResult] = await pool.execute<RowDataPacket[]>(countQuery);
 
     const products = productsResult as Product[];
