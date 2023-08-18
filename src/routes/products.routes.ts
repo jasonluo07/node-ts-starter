@@ -27,6 +27,18 @@ const productsQuerySchema = z.object({
       'Office Supplies',
     ])
     .optional(),
+  priceMin: z
+    .string()
+    .regex(/^\d+$/, {
+      message: 'Minium price must be a non-negative integer',
+    })
+    .optional()
+    .transform(Number),
+  priceMax: z
+    .string()
+    .regex(/^[1-9]\d*$/, { message: 'Maximum price must be a positive integer' })
+    .optional()
+    .transform(Number),
   search: z.string().optional(),
   page: z
     .string()
@@ -51,7 +63,7 @@ const productsQuerySchema = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
-// GET /products?category=&search=&page=1&limit=10&sort_by=id&order=desc
+// GET /products?category=&priceMin=1000&priceMax=5000&search=&page=1&limit=10&sort_by=id&order=desc
 router.get(
   '/',
   catchAsyncError(async (req, res) => {
@@ -63,7 +75,7 @@ router.get(
     const validationResult = productsQuerySchema.safeParse(camelCasedQuery);
     if (!validationResult.success) throw validationResult.error;
 
-    const { category, search, page, limit, sortBy, order } = validationResult.data;
+    const { category, priceMin, priceMax, search, page, limit, sortBy, order } = validationResult.data;
 
     // Calculate the offset for SQL query based on page and limit
     const offset = (page - 1) * limit;
@@ -79,6 +91,8 @@ router.get(
 
     const productsWhereClauses = _.compact([
       category && `c.name = '${category}'`,
+      priceMin && `p.discount_price >= ${priceMin}`,
+      priceMax && `p.discount_price <= ${priceMax}`,
       search && `p.name LIKE '%${search}%'`,
     ]);
     if (productsWhereClauses.length > 0) {
@@ -98,6 +112,8 @@ router.get(
     // prettier-ignore
     const countWhereClauses = _.compact([
       category && `c.name = '${category}'`,
+      priceMin && `p.discount_price >= ${priceMin}`,
+      priceMax && `p.discount_price <= ${priceMax}`,
       search && `p.name LIKE '%${search}%'`,
     ]);
 
