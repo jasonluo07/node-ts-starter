@@ -32,6 +32,7 @@ const statusMapping: Record<HttpCode, ApiResponseStatus> = {
   // success
   [HttpCode.OK]: 'success',
   [HttpCode.CREATED]: 'success',
+  [HttpCode.NO_CONTENT]: 'success',
   // error
   [HttpCode.BAD_REQUEST]: 'error',
   [HttpCode.UNAUTHORIZED]: 'error',

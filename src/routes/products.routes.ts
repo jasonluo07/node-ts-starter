@@ -319,8 +319,7 @@ router.delete(
 
     sendResponse({
       res,
-      statusCode: HttpCode.OK,
-      message: 'Product deleted',
+      statusCode: HttpCode.NO_CONTENT,
     });
   })
 );

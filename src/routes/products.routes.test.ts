@@ -1,8 +1,9 @@
+import { ResultSetHeader } from 'mysql2';
 import type { Response } from 'supertest';
 import request from 'supertest';
 
 import { app, server } from '@/app';
-import { disconnectDatabase } from '@/databases';
+import pool, { disconnectDatabase } from '@/databases';
 import { HttpCode } from '@/enums';
 
 const baseURL = '/products';
@@ -125,6 +126,38 @@ describe('Product Routes', () => {
       };
       const response = await request(app).post(`${baseURL}`).send(productData);
       expect(response.status).toBe(HttpCode.BAD_REQUEST);
+    });
+  });
+
+  describe('DELETE /:productId', () => {
+    let productId: number;
+
+    // 在測試之前，先插入一個產品到資料庫中
+    beforeAll(async () => {
+      const [result] = await pool.execute<ResultSetHeader>(
+        'INSERT INTO products (name, original_price, discount_price, category_id) VALUES (?, ?, ?, ?)',
+        ['Test Product', 1000, 900, 1] // 假設 1 是有效的 category_id
+      );
+      productId = result.insertId;
+    });
+
+    // 測試成功刪除產品的情境
+    it('should delete a product successfully', async () => {
+      const response = await request(app).delete(`${baseURL}/${productId}`);
+      expect(response.status).toBe(HttpCode.NO_CONTENT); // 204 就不要回傳 body 了
+    });
+
+    // 測試試圖刪除不存在的產品的情境
+    it('should return an error if product does not exist', async () => {
+      const nonExistentProductId = 9999; // 假設這是一個不存在的 productId
+      const response = await request(app).delete(`${baseURL}/${nonExistentProductId}`);
+      expect(response.status).toBe(HttpCode.NOT_FOUND);
+      expect(response.body.message).toBe('Product not found');
+    });
+
+    // 測試結束後，清除測試資料
+    afterAll(async () => {
+      await pool.execute('DELETE FROM products WHERE id = ?', [productId]);
     });
   });
 });

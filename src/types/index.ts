@@ -23,14 +23,14 @@ export interface Order {
 
 export interface ApiResponse<T> {
   status: ApiResponseStatus;
-  message: string;
+  message?: string;
   data?: T;
 }
 
 export interface SendResponseParams<T> {
   res: Response;
   statusCode: HttpCode;
-  message: string;
+  message?: string;
   data?: T;
 }
 
