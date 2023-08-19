@@ -3,8 +3,8 @@ import type { Response } from 'supertest';
 import request from 'supertest';
 
 import { app, server } from '@/app';
+import { HttpCode } from '@/constants';
 import pool, { disconnectDatabase } from '@/databases';
-import { HttpCode } from '@/enums';
 
 const baseURL = '/products';
 

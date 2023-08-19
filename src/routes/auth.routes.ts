@@ -2,9 +2,9 @@ import { Router } from 'express';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import z from 'zod';
 
+import { HttpCode } from '@/constants';
+import { DatabaseError, UnauthorizedError } from '@/constants/errors';
 import pool from '@/databases';
-import { HttpCode } from '@/enums';
-import { DatabaseError, UnauthorizedError } from '@/errors';
 import { catchAsyncError } from '@/middlewares';
 import { checkPassword, generateToken, hashPassword, sendResponse } from '@/utils';
 

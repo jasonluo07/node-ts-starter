@@ -1,8 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-import { SALT_ROUNDS } from '@/constants';
-import { HttpCode } from '@/enums';
+import { HttpCode, SALT_ROUNDS } from '@/constants';
 import { ApiResponse, ApiResponseStatus, SendResponseParams, UserPayload } from '@/types';
 
 export async function hashPassword(password: string): Promise<string> {

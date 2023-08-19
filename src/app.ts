@@ -3,7 +3,7 @@ import '@/config';
 import type { Response } from 'express';
 import express from 'express';
 
-import { HttpCode } from '@/enums';
+import { HttpCode } from '@/constants';
 import { authenticate, errorHandler } from '@/middlewares';
 import { authRouter, ordersRouter, productsRouter } from '@/routes';
 import type { AuthenticatedRequest, UserPayload } from '@/types';

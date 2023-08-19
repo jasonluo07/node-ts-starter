@@ -3,8 +3,8 @@ import jwt from 'jsonwebtoken';
 import winston from 'winston';
 import { ZodError } from 'zod';
 
-import { HttpCode } from '@/enums';
-import { DatabaseError, NotFoundError, UnauthorizedError } from '@/errors';
+import { HttpCode } from '@/constants';
+import { DatabaseError, NotFoundError, UnauthorizedError } from '@/constants/errors';
 import type { AuthenticatedRequest, UserPayload } from '@/types';
 import { isDbError, sendResponse } from '@/utils';
 

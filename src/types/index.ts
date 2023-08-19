@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { HttpCode } from '@/enums';
+import { HttpCode } from '@/constants';
 
 export type ApiResponseStatus = 'success' | 'error';
 

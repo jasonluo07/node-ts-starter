@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import type { RowDataPacket } from 'mysql2';
 
+import { HttpCode } from '@/constants';
+import { NotFoundError } from '@/constants/errors';
 import pool from '@/databases';
-import { HttpCode } from '@/enums';
-import { NotFoundError } from '@/errors';
 import { catchAsyncError } from '@/middlewares';
 import { Order, UserPayload } from '@/types';
 import { sendResponse } from '@/utils';
