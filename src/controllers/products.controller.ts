@@ -6,25 +6,25 @@ import z from 'zod';
 import { HttpCode, ProductCategory } from '@/constants';
 import { DatabaseError, NotFoundError } from '@/constants/errors';
 import pool from '@/databases';
-import type { AuthenticatedRequest, Product } from '@/types';
+import type { AuthenticatedRequest, Product, ProductDto } from '@/types';
 import { sendResponse } from '@/utils';
 
 const productsQuerySchema = z
   .object({
-    category: z.nativeEnum(ProductCategory).optional(),
+    category: z.nativeEnum(ProductCategory).nullable().default(null),
     priceMin: z
       .string()
       .regex(/^\d+$/, {
         message: 'Minium price must be a non-negative integer',
       })
-      .optional()
-      .transform(Number),
+      .nullable()
+      .default(null),
     priceMax: z
       .string()
       .regex(/^[1-9]\d*$/, { message: 'Maximum price must be a positive integer' })
-      .optional()
-      .transform(Number),
-    search: z.string().optional(),
+      .nullable()
+      .default(null),
+    search: z.string().nullable().default(null),
     page: z
       .string()
       .regex(/^[1-9]\d*$/, {
@@ -42,15 +42,21 @@ const productsQuerySchema = z
       .refine((value) => value <= 100, {
         message: 'Limit must be less than or equal to 100',
       }),
-    sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
-    order: z.enum(['desc', 'asc']).optional().default('desc'),
+    sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).nullable().default(null),
+    order: z
+      .enum(['desc', 'asc'])
+      .nullable()
+      .default(null)
+      .transform((value) => {
+        if (value === 'desc') return 'DESC';
+        if (value === 'asc') return 'ASC';
+        return null;
+      }),
   })
   .refine(
     (data) => {
-      if (isNaN(data.priceMin) || isNaN(data.priceMax)) {
-        return true;
-      }
-      return data.priceMin < data.priceMax;
+      if (!data.priceMin || !data.priceMax) return true;
+      return Number(data.priceMin) < Number(data.priceMax);
     },
     {
       message: 'Minimum price must be less than maximum price',
@@ -67,39 +73,13 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
   if (!validationResult.success) throw validationResult.error;
 
   // Extract the validated query parameters using destructuring
-  const { category, priceMin, priceMax, search, page, limit, sortBy, order } = validationResult.data;
+  const params = Object.values(validationResult.data);
 
-  // Calculate the offset for SQL query based on page and limit
-  const offset = (page - 1) * limit;
+  // Call the stored procedure
+  const result = await pool.execute<RowDataPacket[]>('CALL GetProducts(?, ?, ?, ?, ?, ?, ?, ?)', params);
 
-  // Construct the SQL query to fetch products with conditions and pagination
-  let productsQuery = `
-    SELECT
-      p.id, p.name, p.original_price, p.discount_price, p.description,
-      c.name AS category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-  `;
-
-  //
-  const productsWhereClauses = _.compact([
-    category && `c.name = '${category}'`,
-    priceMin && `p.discount_price >= ${priceMin}`,
-    priceMax && `p.discount_price <= ${priceMax}`,
-    search && `p.name LIKE '%${search}%'`,
-  ]);
-  if (productsWhereClauses.length > 0) {
-    productsQuery += ' WHERE ' + productsWhereClauses.join(' AND ');
-  }
-
-  productsQuery += `
-    ORDER BY ${sortBy} ${order.toUpperCase()}
-    LIMIT ? OFFSET ?;
-  `;
-
-  const [productsResult] = await pool.execute<RowDataPacket[]>(productsQuery, [limit.toString(), offset.toString()]);
-
-  const products = productsResult.map((row) => ({
+  // Extract the products and total record count from the result
+  const products: Product[] = result[0][0].map((row: ProductDto) => ({
     id: row.id,
     name: row.name,
     originalPrice: Number(row.original_price),
@@ -107,32 +87,18 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
     description: row.description,
     categoryName: row.category_name,
   }));
-
-  // Fetch the total count of products
-  let countQuery = 'SELECT COUNT(*) AS total FROM products p LEFT JOIN categories c ON p.category_id = c.id';
-
-  const countWhereClauses = _.compact([
-    category && `c.name = '${category}'`,
-    priceMin && `p.discount_price >= ${priceMin}`,
-    priceMax && `p.discount_price <= ${priceMax}`,
-    search && `p.name LIKE '%${search}%'`,
-  ]);
-
-  if (countWhereClauses.length > 0) {
-    countQuery += ' WHERE ' + countWhereClauses.join(' AND ');
-  }
-
-  const [countResult] = await pool.execute<RowDataPacket[]>(countQuery);
+  const totalItems = result[0][1][0].TotalRecord as number;
 
   // Construct the pagination object with relevant details
+  const { page, limit } = validationResult.data;
   const pagination = {
     currentItems: products.length,
-    totalItems: countResult[0].total as number,
+    totalItems,
     currentPage: page,
     itemsPerPage: limit,
     // NOTE: get syntax binds an object property to a function that will be called when that property is looked up.
     get totalPages() {
-      return Math.ceil(this.totalItems / limit);
+      return Math.ceil(this.totalItems / this.itemsPerPage);
     },
   };
 

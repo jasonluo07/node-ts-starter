@@ -4,6 +4,15 @@ import { HttpCode } from '@/constants';
 
 export type ApiResponseStatus = 'success' | 'error';
 
+export interface ProductDto {
+  id: number;
+  name: string;
+  original_price: string;
+  discount_price: string;
+  description: string;
+  category_name: string;
+}
+
 export interface Product {
   id: number;
   name: string;
