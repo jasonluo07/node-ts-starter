@@ -3,7 +3,7 @@ import _ from 'lodash';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import z from 'zod';
 
-import { HttpCode } from '@/constants';
+import { HttpCode, ProductCategory } from '@/constants';
 import { DatabaseError, NotFoundError } from '@/constants/errors';
 import pool from '@/databases';
 import type { AuthenticatedRequest, Product } from '@/types';
@@ -11,20 +11,7 @@ import { sendResponse } from '@/utils';
 
 const productsQuerySchema = z
   .object({
-    category: z
-      .enum([
-        'Electronics',
-        'Books',
-        'Home Decor',
-        'Clothing',
-        'Food & Beverages',
-        'Health & Beauty',
-        'Sports & Leisure',
-        'Toys',
-        'Handicrafts',
-        'Office Supplies',
-      ])
-      .optional(),
+    category: z.nativeEnum(ProductCategory).optional(),
     priceMin: z
       .string()
       .regex(/^\d+$/, {
@@ -43,7 +30,6 @@ const productsQuerySchema = z
       .regex(/^[1-9]\d*$/, {
         message: 'Page must be a positive integer',
       })
-      .optional()
       .default('1')
       .transform(Number),
     limit: z
@@ -51,14 +37,13 @@ const productsQuerySchema = z
       .regex(/^[1-9]\d*$/, {
         message: 'Limit must be a positive integer',
       })
-      .optional()
       .default('10')
       .transform(Number)
       .refine((value) => value <= 100, {
         message: 'Limit must be less than or equal to 100',
       }),
     sortBy: z.enum(['id', 'name', 'original_price', 'discount_price']).optional().default('id'),
-    order: z.enum(['asc', 'desc']).optional().default('desc'),
+    order: z.enum(['desc', 'asc']).optional().default('desc'),
   })
   .refine(
     (data) => {
@@ -77,16 +62,17 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
   const plainQuery = req.query;
   const camelCasedQuery = _.mapKeys(plainQuery, (_value, key) => _.camelCase(key));
 
-  // Validate the query parameters using the zod schema
+  // Validate the query parameters using Zod schema
   const validationResult = productsQuerySchema.safeParse(camelCasedQuery);
   if (!validationResult.success) throw validationResult.error;
 
+  // Extract the validated query parameters using destructuring
   const { category, priceMin, priceMax, search, page, limit, sortBy, order } = validationResult.data;
 
   // Calculate the offset for SQL query based on page and limit
   const offset = (page - 1) * limit;
 
-  // Fetch the products based on the provided page and limit
+  // Construct the SQL query to fetch products with conditions and pagination
   let productsQuery = `
     SELECT
       p.id, p.name, p.original_price, p.discount_price, p.description,
@@ -95,6 +81,7 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
     LEFT JOIN categories c ON p.category_id = c.id
   `;
 
+  //
   const productsWhereClauses = _.compact([
     category && `c.name = '${category}'`,
     priceMin && `p.discount_price >= ${priceMin}`,
@@ -112,6 +99,15 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
 
   const [productsResult] = await pool.execute<RowDataPacket[]>(productsQuery, [limit.toString(), offset.toString()]);
 
+  const products = productsResult.map((row) => ({
+    id: row.id,
+    name: row.name,
+    originalPrice: Number(row.original_price),
+    discountPrice: Number(row.discount_price),
+    description: row.description,
+    categoryName: row.category_name,
+  }));
+
   // Fetch the total count of products
   let countQuery = 'SELECT COUNT(*) AS total FROM products p LEFT JOIN categories c ON p.category_id = c.id';
 
@@ -127,15 +123,6 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
   }
 
   const [countResult] = await pool.execute<RowDataPacket[]>(countQuery);
-
-  const products = productsResult.map((row) => ({
-    id: row.id,
-    name: row.name,
-    originalPrice: Number(row.original_price),
-    discountPrice: Number(row.discount_price),
-    description: row.description,
-    categoryName: row.category_name,
-  }));
 
   // Construct the pagination object with relevant details
   const pagination = {
