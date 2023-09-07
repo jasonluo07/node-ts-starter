@@ -63,6 +63,7 @@ const productsQuerySchema = z
     }
   );
 
+// http://localhost:9527/products?category=electronics&priceMin=1000&priceMax=5000&search=apple&page=1&limit=10&sort_by=id&order=desc
 export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
   // Convert snake_case keys in req.query to camelCase
   const plainQuery = req.query;
